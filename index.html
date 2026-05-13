@@ -129,7 +129,7 @@
 
 <div class="header">
   <h1>🎯 Quiz Ôn Tập Giữa Kỳ</h1>
-  <p>Phát Triển Hệ Thống Web – Phủ toàn bộ 8 chủ đề lý thuyết</p>
+  <p>Phát Triển Hệ Thống Web – Phủ toàn bộ 9 chủ đề lý thuyết (9 file PDF)</p>
 </div>
 
 <!-- ===== SETUP ===== -->
@@ -142,7 +142,7 @@
 
     <div class="row">
       <label>Số câu hỏi:</label>
-      <input type="range" id="q-count-range" min="10" max="120" step="5" value="120" oninput="updateCountLabel()" />
+      <input type="range" id="q-count-range" min="10" max="200" step="5" value="200" oninput="updateCountLabel()" />
       <span id="sel-count-label">120</span> câu
     </div>
     <div class="row">
@@ -743,6 +743,261 @@ const QUESTIONS = [
 { topic:"ReactJS", q:"Spread operator {...data} trong JSX props dùng để làm gì?",
   opts:["Merge nhiều component thành một","Truyền tất cả properties của object data làm props","Copy component","Destructure component"],
   ans:1, explain:"{...data} spread object thành individual props. Ví dụ: data={firstName:'A', lastName:'B'} → <Welcome {...data} /> = <Welcome firstName='A' lastName='B' />" },
+
+// ===========================
+// CHỦ ĐỀ 9: JAVA NÂNG CAO
+// ===========================
+{ topic:"Java Nâng Cao", q:"JVM là viết tắt của gì và ai là cha đẻ của ngôn ngữ Java?",
+  opts:["Java Virtual Machine – James Gosling","Java Variable Manager – Bill Gates","Java Version Model – Linus Torvalds","Java Virtual Module – Dennis Ritchie"],
+  ans:0, explain:"JVM = Java Virtual Machine, được phát triển cùng Java bởi James Gosling. Nguyên tắc WORA: Write Once, Run Anywhere." },
+
+{ topic:"Java Nâng Cao", q:"JVM có bao nhiêu thành phần chính?",
+  opts:["2 (Class Loader, Execution Engine)","3 (Class Loader, Runtime Data Area, Execution Engine)","4 (Class Loader, JIT, GC, Execution Engine)","5 thành phần"],
+  ans:1, explain:"3 thành phần chính của JVM: Class Loader (nạp class), Runtime Data Area (cấp phát bộ nhớ), Execution Engine (thực thi bytecode)." },
+
+{ topic:"Java Nâng Cao", q:"Vùng nhớ nào trong JVM được chia sẻ cho TẤT CẢ các thread?",
+  opts:["Stack Area và PC Register","Method Area và Heap Area","Native Method Stack","PC Register và Stack"],
+  ans:1, explain:"Method Area và Heap là vùng nhớ dùng chung toàn JVM. Stack, PC Register, Native Method Stack là riêng mỗi thread." },
+
+{ topic:"Java Nâng Cao", q:"Heap Area trong JVM dùng để lưu trữ gì?",
+  opts:["Biến cục bộ và tham số method","Đối tượng (objects), mảng, và String được tạo trong runtime","Địa chỉ lệnh đang thực thi","Thông tin class và method static"],
+  ans:1, explain:"Heap lưu trữ: objects (new ClassName()), arrays, và String instances. Mọi thread đều chia sẻ vùng Heap." },
+
+{ topic:"Java Nâng Cao", q:"Stack Area trong JVM dùng để lưu trữ gì và hoạt động theo cơ chế nào?",
+  opts:["Lưu objects, cơ chế FIFO","Lưu biến cục bộ và tham số method, cơ chế LIFO","Lưu thông tin class, cơ chế random access","Lưu bytecode, cơ chế sequential"],
+  ans:1, explain:"Stack lưu biến cục bộ và tham số method. Hoạt động LIFO: frame của method được push khi gọi, pop khi method kết thúc." },
+
+{ topic:"Java Nâng Cao", q:"Exception nào xảy ra khi Heap không còn đủ bộ nhớ để cấp phát object mới?",
+  opts:["StackOverFlowError","NullPointerException","java.lang.OutOfMemoryError","HeapLimitException"],
+  ans:2, explain:"java.lang.OutOfMemoryError: thrown khi JVM không thể cấp phát thêm object trong Heap." },
+
+{ topic:"Java Nâng Cao", q:"Exception nào xảy ra khi Stack không còn đủ bộ nhớ cho biến cục bộ?",
+  opts:["OutOfMemoryError","java.lang.StackOverFlowError","NullPointerException","RecursionLimitError"],
+  ans:1, explain:"java.lang.StackOverFlowError: thường xảy ra khi đệ quy vô tận – mỗi lần gọi method tạo một frame mới trong Stack." },
+
+{ topic:"Java Nâng Cao", q:"Garbage Collector trong JVM tự động dọn dẹp object khi nào?",
+  opts:["Sau mỗi 60 giây","Khi không còn reference nào trỏ đến object đó","Khi gọi delete(object)","Khi method kết thúc"],
+  ans:1, explain:"GC thu hồi object khi không còn reference nào trỏ đến nó: biến cục bộ hết scope, reference gán sang object khác, hoặc gán null." },
+
+{ topic:"Java Nâng Cao", q:"Method Area trong JVM lưu trữ gì?",
+  opts:["Biến cục bộ của từng method","Cấu trúc class: tên class, tên class cha, methods, attributes (kể cả static)","Object và array","Địa chỉ lệnh đang thực thi của từng thread"],
+  ans:1, explain:"Method Area (dùng chung toàn JVM): lưu metadata của class – tên, parent, danh sách method, field, và code bytecode của method." },
+
+{ topic:"Java Nâng Cao", q:"PC Register (Program Counter) trong JVM dùng để làm gì?",
+  opts:["Đếm số lần method được gọi","Lưu địa chỉ của lệnh đang thực thi trong thread hiện tại","Quản lý priority của thread","Lưu tham số của constructor"],
+  ans:1, explain:"PC Register: mỗi thread có 1 PC Register riêng, lưu địa chỉ lệnh bytecode đang được Execution Engine thực thi." },
+
+{ topic:"Java Nâng Cao", q:"Java Collection Framework thuộc package nào?",
+  opts:["java.io","java.lang","java.util","java.collections"],
+  ans:2, explain:"Collection Framework nằm trong package java.util – cung cấp các cấu trúc dữ liệu: List, Set, Map và các utility." },
+
+{ topic:"Java Nâng Cao", q:"Điểm khác biệt chính giữa List và Set trong Java là gì?",
+  opts:["List nhanh hơn Set","Set không cho phép phần tử trùng lặp, List cho phép","List là interface, Set là class","Set hỗ trợ index, List thì không"],
+  ans:1, explain:"Set: KHÔNG cho phép phần tử duplicate. List: cho phép trùng lặp và có thứ tự theo index." },
+
+{ topic:"Java Nâng Cao", q:"ArrayList và LinkedList khác nhau như thế nào về cơ chế lưu trữ?",
+  opts:["Hoàn toàn giống nhau","ArrayList lưu bằng mảng (array), LinkedList lưu bằng danh sách liên kết","ArrayList nhanh hơn LinkedList trong mọi trường hợp","LinkedList không hỗ trợ get(index)"],
+  ans:1, explain:"ArrayList: dùng array nội bộ → truy cập index O(1) nhanh, thêm/xóa giữa chậm. LinkedList: linked list → thêm/xóa đầu/cuối nhanh." },
+
+{ topic:"Java Nâng Cao", q:"Phương thức addFirst() và addLast() thuộc class nào?",
+  opts:["ArrayList","HashSet","LinkedList","TreeList"],
+  ans:2, explain:"addFirst() và addLast() là phương thức riêng của LinkedList – thêm phần tử vào đầu hoặc cuối danh sách." },
+
+{ topic:"Java Nâng Cao", q:"Ba implementation của Set interface theo thứ tự dữ liệu là gì?",
+  opts:["ArrayList, LinkedList, TreeList","HashSet (không thứ tự), LinkedHashSet (thứ tự chèn), TreeSet (thứ tự sắp xếp)","HashSet, HashMap, TreeMap","ListSet, OrderedSet, SortedSet"],
+  ans:1, explain:"HashSet: không đảm bảo thứ tự. LinkedHashSet: giữ thứ tự chèn. TreeSet: tự động sắp xếp theo natural order." },
+
+{ topic:"Java Nâng Cao", q:"Map interface trong Java lưu dữ liệu theo dạng nào?",
+  opts:["Danh sách đơn","Key-value pairs (cặp khóa-giá trị) với key là duy nhất","Tập hợp không có thứ tự","Hàng đợi FIFO"],
+  ans:1, explain:"Map lưu key-value pairs. Key phải UNIQUE. Cho phép truy cập nhanh giá trị thông qua key." },
+
+{ topic:"Java Nâng Cao", q:"Collections.frequency(list, \"Vietnam\") trả về gì?",
+  opts:["Index đầu tiên của \"Vietnam\"","Số lần xuất hiện của \"Vietnam\" trong list","true/false nếu có \"Vietnam\"","Danh sách vị trí của \"Vietnam\""],
+  ans:1, explain:"Collections.frequency(collection, element) đếm số lần element xuất hiện trong collection." },
+
+{ topic:"Java Nâng Cao", q:"Lambda expression trong Java yêu cầu interface phải có đặc điểm gì?",
+  opts:["Phải có ít nhất 2 abstract method","Phải là Functional Interface (chỉ có đúng 1 abstract method – SAM Interface)","Phải extends Runnable","Phải là public interface"],
+  ans:1, explain:"Lambda implement Functional Interface (SAM = Single Abstract Method): interface có đúng 1 abstract method. Ví dụ: Runnable, Comparator." },
+
+{ topic:"Java Nâng Cao", q:"Cú pháp lambda expression đúng trong Java là gì?",
+  opts:["function(x) => x * 2","(x) -> x * 2","lambda x: x * 2","def(x) { return x * 2; }"],
+  ans:1, explain:"Cú pháp Java lambda: (params) -> expression hoặc (params) -> { statements; }. Ví dụ: (x) -> x * 2" },
+
+{ topic:"Java Nâng Cao", q:"Stream trong Java 8 khác Iterator như thế nào?",
+  opts:["Stream chỉ dùng được với mảng","Stream hỗ trợ method chaining và các phép toán functional (filter, map, reduce)","Stream nhanh hơn Iterator trong mọi trường hợp","Hoàn toàn giống nhau"],
+  ans:1, explain:"Stream hỗ trợ pipeline: filter().map().sorted().forEach() – các intermediate operations trả về Stream để chain tiếp." },
+
+{ topic:"Java Nâng Cao", q:"Trong Stream API, phương thức nào là TERMINAL operation (kết thúc stream)?",
+  opts:["filter()","map()","sorted()","forEach()"],
+  ans:3, explain:"Terminal operations: forEach(), count(), min(), max(), average(), reduce() – kết thúc pipeline và trả về kết quả. Intermediate: filter(), map(), sorted(), distinct(), limit()." },
+
+{ topic:"Java Nâng Cao", q:"IntStream.of(values).filter(v -> v % 2 == 0) làm gì?",
+  opts:["Lọc các số lẻ","Lọc các số chẵn từ stream","Nhân mỗi phần tử với 2","Đếm số phần tử chẵn"],
+  ans:1, explain:"filter(v -> v % 2 == 0): giữ lại các phần tử CHẴN trong stream (v % 2 == 0 là điều kiện số chẵn)." },
+
+{ topic:"Java Nâng Cao", q:"reduce(0, (x, y) -> x + y) trong Stream làm gì?",
+  opts:["Lọc phần tử","Tính tổng tất cả phần tử (giá trị khởi tạo là 0)","Tìm min","Sắp xếp giảm dần"],
+  ans:1, explain:"reduce(identity, accumulator): gom toàn bộ phần tử thành 1 giá trị. reduce(0, (x,y) -> x+y) tính tổng." },
+
+{ topic:"Java Nâng Cao", q:"Có mấy cách tạo thread trong Java?",
+  opts:["1 cách (implement Runnable)","2 cách (implement Runnable hoặc extend Thread)","3 cách","4 cách"],
+  ans:1, explain:"2 cách chính: (1) implement Runnable interface và truyền vào new Thread(task), (2) extend Thread class và override run()." },
+
+{ topic:"Java Nâng Cao", q:"Để khởi chạy một Thread, phải gọi phương thức nào?",
+  opts:["thread.run()","thread.execute()","thread.start()","thread.begin()"],
+  ans:2, explain:"Phải gọi thread.start() – JVM nhận tín hiệu thread sẵn sàng rồi tự gọi run(). Gọi trực tiếp run() không tạo thread mới." },
+
+{ topic:"Java Nâng Cao", q:"Thread.sleep(1000) làm gì?",
+  opts:["Kết thúc thread","Tạm dừng thread hiện tại 1000 mili-giây, cho thread khác cơ hội chạy","Chờ thread khác hoàn thành","Đặt priority cho thread"],
+  ans:1, explain:"Thread.sleep(ms): tạm dừng thread hiện tại trong ms mili-giây. Throws InterruptedException nên cần try-catch." },
+
+{ topic:"Java Nâng Cao", q:"Phương thức join() trong Thread dùng để làm gì?",
+  opts:["Gộp 2 thread thành 1","Buộc thread hiện tại CHỜ thread được gọi join() hoàn thành xong mới tiếp tục","Tăng priority của thread","Dừng thread ngay lập tức"],
+  ans:1, explain:"t.join(): thread đang chạy sẽ DỪNG và chờ thread t kết thúc hoàn toàn rồi mới tiếp tục." },
+
+{ topic:"Java Nâng Cao", q:"Race condition trong multithreading là gì?",
+  opts:["Khi thread chạy quá nhanh","Khi nhiều thread cùng truy cập và thay đổi dữ liệu chung, dẫn đến kết quả không nhất quán","Khi thread bị deadlock","Khi thread ưu tiên cao chạy trước"],
+  ans:1, explain:"Race condition: nhiều thread cùng đọc-ghi dữ liệu shared mà không đồng bộ → kết quả phụ thuộc vào thứ tự thực thi, không xác định." },
+
+{ topic:"Java Nâng Cao", q:"Từ khóa synchronized trong Java dùng để giải quyết vấn đề gì?",
+  opts:["Tăng tốc độ thực thi","Đảm bảo chỉ một thread tại một thời điểm được truy cập vào method/block – ngăn race condition","Tạo thread mới tự động","Quản lý bộ nhớ Heap"],
+  ans:1, explain:"synchronized: lock object/class để chỉ 1 thread vào method tại 1 thời điểm. Ngăn race condition nhưng giảm concurrency." },
+
+{ topic:"Java Nâng Cao", q:"Executors.newFixedThreadPool(2) tạo ra gì?",
+  opts:["Thread pool với tối đa 2 task chờ","Thread pool với đúng 2 thread để thực thi các task","2 thread chạy song song và tự kết thúc","ExecutorService không thể tắt"],
+  ans:1, explain:"newFixedThreadPool(n): tạo pool cố định n thread. Task mới được queue chờ nếu cả n thread đang bận." },
+
+{ topic:"Java Nâng Cao", q:"executor.shutdown() làm gì?",
+  opts:["Dừng ngay lập tức tất cả thread","Ngừng nhận task mới, đợi task đang chạy và task trong queue hoàn thành rồi mới tắt","Xóa toàn bộ task trong queue","Tạm dừng executor"],
+  ans:1, explain:"shutdown(): graceful shutdown – không nhận task mới, nhưng CHỜ tất cả task hiện tại (running + queued) hoàn thành." },
+
+{ topic:"Java Nâng Cao", q:"Generics trong Java dùng để làm gì?",
+  opts:["Tạo class abstract","Tham số hóa kiểu dữ liệu – giúp code type-safe và tái sử dụng được với nhiều kiểu","Định nghĩa interface","Tạo singleton pattern"],
+  ans:1, explain:"Generics: tham số hóa type (ví dụ List<String>, List<Integer>) – phát hiện lỗi type tại compile time thay vì runtime." },
+
+{ topic:"Java Nâng Cao", q:"Trong Java Collection, phương thức retainAll() làm gì?",
+  opts:["Thêm tất cả phần tử từ collection khác","Giữ lại CHỈ các phần tử có trong CÙNG cả hai collection (phép giao)","Xóa tất cả phần tử chung","Sắp xếp lại collection"],
+  ans:1, explain:"retainAll(other): giữ lại trong collection hiện tại CHỈ những phần tử cũng có trong 'other'. Tương đương phép giao (intersection)." },
+
+// BSUNG JDBC
+{ topic:"JDBC", q:"Cú pháp tạo CallableStatement để gọi stored procedure là gì?",
+  opts:["conn.createCallable(\"{ call procName(?) }\")","conn.prepareCall(\"{ call procName(?) }\")","conn.callProcedure(\"procName\")","conn.execute(\"CALL procName(?)\")"],
+  ans:1, explain:"conn.prepareCall(\"{ call procedureName(?) }\") tạo CallableStatement để gọi stored procedure." },
+
+{ topic:"JDBC", q:"Trong MySQL, cú pháp gọi stored procedure là gì?",
+  opts:["EXECUTE procedureName(param)","RUN procedureName(param)","CALL procedureName(param)","INVOKE procedureName(param)"],
+  ans:2, explain:"MySQL dùng CALL để gọi stored procedure: CALL procedureName(param1, param2, ...)" },
+
+{ topic:"JDBC", q:"Phương thức ResultSet.next() trả về false khi nào?",
+  opts:["Khi có lỗi SQL","Khi con trỏ đang ở hàng đầu tiên","Khi con trỏ đã qua hàng cuối cùng (không còn hàng nào)","Khi ResultSet rỗng"],
+  ans:2, explain:"next() trả về true nếu còn hàng tiếp theo, false khi đã qua hàng cuối. Dùng trong while(rs.next()) để duyệt toàn bộ kết quả." },
+
+{ topic:"JDBC", q:"Maven dependency nào cần thêm để kết nối MySQL qua JDBC?",
+  opts:["org.mysql:mysql-driver","com.mysql:mysql-connector-j","mysql:mysql-jdbc","com.mysql:jdbc-connector"],
+  ans:1, explain:"groupId: com.mysql, artifactId: mysql-connector-j – đây là JDBC driver chính thức cho MySQL." },
+
+// BSUNG Hibernate
+{ topic:"Hibernate", q:"Trong Hibernate, @JoinColumn(name=\"category_id\") dùng để làm gì?",
+  opts:["Tạo cột mới trong bảng","Chỉ định tên cột khóa ngoại trong bảng hiện tại để join với bảng liên quan","Đặt tên cho bảng trung gian","Khai báo khóa chính"],
+  ans:1, explain:"@JoinColumn(name=\"category_id\"): cột category_id trong bảng product là foreign key tham chiếu đến bảng category." },
+
+{ topic:"Hibernate", q:"Sự khác biệt giữa session.get() và session.load() trong Hibernate?",
+  opts:["Hoàn toàn giống nhau","get() trả về null nếu không tìm thấy, load() ném ObjectNotFoundException","load() nhanh hơn get()","get() chỉ dùng cho SELECT, load() cho UPDATE"],
+  ans:1, explain:"session.get(Class, id): trả về null nếu không tìm thấy. session.load(): ném exception nếu không tìm thấy (trả về proxy)." },
+
+{ topic:"Hibernate", q:"HQL aggregate function nào dùng để tính trung bình?",
+  opts:["average()","mean()","avg()","avg_value()"],
+  ans:2, explain:"HQL hỗ trợ: avg(), count(), max(), min(), sum() – tương tự SQL aggregate functions nhưng dùng với property của class." },
+
+{ topic:"Hibernate", q:"Trong Criteria API, query.groupBy() tương đương mệnh đề nào trong SQL?",
+  opts:["WHERE","ORDER BY","GROUP BY","HAVING"],
+  ans:2, explain:"query.groupBy(root.get(\"category\")) tương đương GROUP BY category trong SQL." },
+
+// BSUNG Spring Framework
+{ topic:"Spring Framework", q:"@Configuration annotation trong Spring dùng để làm gì?",
+  opts:["Đánh dấu class là Controller","Đánh dấu class là nguồn cấu hình Bean (thay thế XML beans.xml)","Bật AOP","Khai báo Entity class"],
+  ans:1, explain:"@Configuration: class Java có thể định nghĩa @Bean methods, đây là cách cấu hình Spring thuần Java thay cho XML." },
+
+{ topic:"Spring Framework", q:"Trong Spring XML config, <list> dùng để inject loại thuộc tính nào?",
+  opts:["Map","Mảng hoặc List (cho phép phần tử trùng lặp)","Set (không trùng lặp)","Properties (String key-value)"],
+  ans:1, explain:"<list>: inject vào thuộc tính kiểu List/Array, cho phép duplicate. <set>: không duplicate. <map>: key-value bất kỳ type. <props>: String key-value." },
+
+{ topic:"Spring Framework", q:"Autowire mode 'autodetect' trong Spring hoạt động như thế nào?",
+  opts:["Inject tất cả bean cùng lúc","Thử constructor injection trước, nếu không được thì dùng byType","Dùng tên bean để inject","Tắt autowiring"],
+  ans:1, explain:"autodetect: Spring thử constructor injection trước. Nếu class không có no-arg constructor phù hợp, dùng byType." },
+
+// BSUNG Spring MVC
+{ topic:"Spring MVC", q:"@ComponentScan(basePackages={\"com.dht.controllers\"}) có tác dụng gì?",
+  opts:["Scan và tìm file cấu hình","Tự động phát hiện và đăng ký các class có @Component, @Controller, @Service, @Repository trong package được chỉ định","Tạo datasource tự động","Cấu hình view resolver"],
+  ans:1, explain:"@ComponentScan: Spring tự động scan package, phát hiện các class annotated (@Controller, @Service...) và đăng ký làm bean." },
+
+{ topic:"Spring MVC", q:"Trong URL http://localhost:8080/App/products/search?kw=iphone, phần nào là Request Path?",
+  opts:["http://","localhost:8080","/App","/products/search"],
+  ans:3, explain:"URL gồm: Scheme (http://) + Domain (localhost:8080) + AppName (/App) + Request Path (/products/search) + Params (?kw=iphone)." },
+
+{ topic:"Spring MVC", q:"@EnableWebMvc có tác dụng gì?",
+  opts:["Bật Spring Security","Kích hoạt cấu hình Spring MVC mặc định (handler mappings, view resolvers, message converters...)","Tạo DataSource tự động","Bật transaction management"],
+  ans:1, explain:"@EnableWebMvc: import Spring MVC default configuration, tương đương <mvc:annotation-driven /> trong XML config." },
+
+// BSUNG Thymeleaf
+{ topic:"Thymeleaf", q:"Cấu hình ThymeleafConfig cần định nghĩa những @Bean nào tối thiểu?",
+  opts:["Chỉ templateEngine","templateResolver, templateEngine, và viewResolver","Chỉ viewResolver","templateEngine và dataSource"],
+  ans:1, explain:"Cần 3 bean: ClassLoaderTemplateResolver (nơi tìm template), SpringTemplateEngine (engine xử lý), ThymeleafViewResolver (kết nối với Spring MVC)." },
+
+{ topic:"Thymeleaf", q:"xmlns:th=\"http://www.thymeleaf.org\" khai báo ở đâu trong file HTML?",
+  opts:["Trong thẻ <head>","Trong thẻ <body>","Trong thẻ <html> để khai báo Thymeleaf namespace","Trong thẻ <form>"],
+  ans:2, explain:"<html xmlns:th=\"http://www.thymeleaf.org\"> – khai báo Thymeleaf namespace để IDE nhận diện và không báo lỗi th:* attributes." },
+
+{ topic:"Thymeleaf", q:"th:switch và th:case trong Thymeleaf tương tự cấu trúc lập trình nào?",
+  opts:["if-else","for loop","switch-case","try-catch"],
+  ans:2, explain:"th:switch=\"${role}\" + th:case=\"'admin'\" tương đương switch-case trong Java/JavaScript – chọn hiển thị theo giá trị." },
+
+// BSUNG REST API
+{ topic:"REST API", q:"PUT method khác PATCH method như thế nào?",
+  opts:["Hoàn toàn giống nhau","PUT cập nhật TOÀN BỘ resource, PATCH chỉ cập nhật MỘT PHẦN field","PUT tạo mới, PATCH cập nhật","PATCH nhanh hơn PUT"],
+  ans:1, explain:"PUT: gửi toàn bộ resource mới để thay thế (idempotent). PATCH: chỉ gửi các field cần cập nhật, tiết kiệm bandwidth." },
+
+{ topic:"REST API", q:"@JsonFormat(shape=JsonFormat.Shape.STRING, pattern=\"dd-MM-yyyy\") dùng để làm gì?",
+  opts:["Validate định dạng ngày nhập vào","Format ngày giờ theo pattern khi serialize sang JSON","Parse JSON string thành Date object","Ẩn field date khỏi JSON"],
+  ans:1, explain:"@JsonFormat: kiểm soát cách Jackson serialize Date/Time field. Pattern \"dd-MM-yyyy\" → ngày sẽ hiện dạng \"25-12-2024\" trong JSON." },
+
+{ topic:"REST API", q:"REST là kiến trúc stateless nghĩa là gì?",
+  opts:["Server không lưu state của ứng dụng client giữa các request – mỗi request phải tự chứa đủ thông tin","Client không lưu state","Cả client và server đều stateful","REST bắt buộc dùng HTTPS"],
+  ans:0, explain:"Stateless: server KHÔNG lưu session/state của client. Mỗi request phải độc lập và tự chứa đủ thông tin (token, params...) để server xử lý." },
+
+// BSUNG Spring Security
+{ topic:"Spring Security", q:"SimpleGrantedAuthority được dùng để làm gì trong Spring Security?",
+  opts:["Mã hóa password","Tạo đối tượng quyền/role từ chuỗi String để gán cho user","Lưu thông tin session","Tạo JWT token"],
+  ans:1, explain:"new SimpleGrantedAuthority(\"ROLE_ADMIN\"): tạo GrantedAuthority object. Spring Security convention: role name phải bắt đầu bằng ROLE_." },
+
+{ topic:"Spring Security", q:"Trong Spring Security, anyRequest().authenticated() có nghĩa là gì?",
+  opts:["Mọi request đều được phép","Tất cả request CHƯA được match ở trên đều yêu cầu đăng nhập","Chỉ admin mới được truy cập","Chặn tất cả request còn lại"],
+  ans:1, explain:"anyRequest().authenticated(): tất cả URL không được khai báo ở trên đều yêu cầu người dùng đã đăng nhập." },
+
+{ topic:"Spring Security", q:"SecurityWebApplicationInitializer extends AbstractSecurityWebApplicationInitializer có tác dụng gì?",
+  opts:["Tạo form login tự động","Đăng ký Spring Security Filter Chain với Servlet Container (thay thế web.xml config)","Tạo user mặc định","Cấu hình HTTPS"],
+  ans:1, explain:"AbstractSecurityWebApplicationInitializer: tự động đăng ký DelegatingFilterProxy với Servlet Container, không cần cấu hình web.xml." },
+
+// BSUNG ReactJS
+{ topic:"ReactJS", q:"createContext() trong React được dùng để làm gì?",
+  opts:["Tạo component mới","Tạo Context object – entry point để share state toàn cục không cần prop drilling","Tạo custom hook","Tạo reducer"],
+  ans:1, explain:"const MyContext = createContext() tạo Context. Dùng <MyContext.Provider value={...}> để provide giá trị, useContext(MyContext) để consume." },
+
+{ topic:"ReactJS", q:"useReducer hook dùng để làm gì và khác useState như thế nào?",
+  opts:["Dùng để call API","Quản lý state phức tạp với nhiều sub-values hoặc logic update phức tạp, thông qua dispatch(action)","Thay thế useEffect","Tạo global state"],
+  ans:1, explain:"useReducer(reducer, initState): phù hợp khi state có nhiều sub-values hoặc next state phụ thuộc vào previous state. useState đơn giản hơn." },
+
+{ topic:"ReactJS", q:"Khi render list trong React, tại sao cần prop 'key'?",
+  opts:["Để CSS styling","Để React tối ưu reconciliation – phân biệt items khi list thay đổi, tránh re-render không cần thiết","Để truy cập item từ parent","Để sort danh sách"],
+  ans:1, explain:"key: React dùng để track từng item trong list khi diffing Virtual DOM. key ổn định (dùng id) tránh bugs khi thêm/xóa/reorder." },
+
+{ topic:"ReactJS", q:"React cookies: cookies.save(\"token\", value, {path: \"/\"}) dùng để làm gì?",
+  opts:["Đọc cookie","Xóa cookie","Lưu cookie với tên 'token' và path '/'","Kiểm tra cookie tồn tại"],
+  ans:2, explain:"cookies.save(name, value, options): lưu cookie. path: \"/\" nghĩa là cookie có hiệu lực trên toàn bộ website." },
+
+{ topic:"ReactJS", q:"Trong React Router v6, cú pháp nested route với Outlet là gì?",
+  opts:["<Route path='/admin'><Route path='stats' /></Route>","<Route path='/admin' element={<Admin />}><Route path='stats' element={<Stats />} /></Route> với <Outlet/> trong Admin","<NestedRoute parent='/admin' child='stats' />","<Route path='/admin/stats' />"],
+  ans:1, explain:"Nested route: Route con đặt bên trong Route cha. Component cha cần có <Outlet /> làm placeholder render nội dung route con." },
 
 ];
 
