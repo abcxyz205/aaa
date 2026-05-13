@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Quiz Ôn Tập – Phát Triển Hệ Thống Web (Giữa Kỳ)</title>
+<style>
+  :root {
+    --primary: #4f46e5;
+    --primary-light: #818cf8;
+    --success: #16a34a;
+    --danger: #dc2626;
+    --warning: #d97706;
+    --bg: #0f172a;
+    --card: #1e293b;
+    --card2: #273549;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --border: #334155;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+
+  /* ===== HEADER ===== */
+  .header { background: linear-gradient(135deg, #312e81, #1e1b4b); padding: 24px 32px; border-bottom: 1px solid var(--border); }
+  .header h1 { font-size: 1.6rem; font-weight: 700; color: #c7d2fe; }
+  .header p { color: var(--muted); font-size: 0.9rem; margin-top: 4px; }
+
+  /* ===== SETUP SCREEN ===== */
+  #setup-screen { max-width: 720px; margin: 60px auto; padding: 0 20px; }
+  .setup-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 36px; }
+  .setup-card h2 { font-size: 1.3rem; margin-bottom: 24px; color: var(--primary-light); }
+  .topic-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; margin-bottom: 28px; }
+  .topic-btn { background: var(--card2); border: 2px solid var(--border); border-radius: 8px; padding: 12px 16px; cursor: pointer; text-align: left; transition: all .2s; }
+  .topic-btn:hover { border-color: var(--primary-light); }
+  .topic-btn.selected { border-color: var(--primary); background: #312e81; }
+  .topic-btn .t-name { font-weight: 600; font-size: 0.95rem; color: var(--text); }
+  .topic-btn .t-count { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+  .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 20px; }
+  .row label { color: var(--muted); font-size: 0.9rem; white-space: nowrap; }
+  select, input[type=range] { background: var(--card2); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; font-size: 0.9rem; }
+  .btn-start { background: var(--primary); color: #fff; border: none; border-radius: 8px; padding: 14px 36px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background .2s; }
+  .btn-start:hover { background: #4338ca; }
+  .btn-start:disabled { background: var(--border); cursor: not-allowed; }
+  #sel-count-label { color: var(--primary-light); font-weight: 600; min-width: 30px; }
+
+  /* ===== QUIZ SCREEN ===== */
+  #quiz-screen { display: none; max-width: 820px; margin: 0 auto; padding: 24px 20px 80px; }
+
+  /* Progress */
+  .progress-bar-wrap { background: var(--card2); border-radius: 999px; height: 8px; margin-bottom: 8px; overflow: hidden; }
+  .progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--primary-light)); border-radius: 999px; transition: width .4s; }
+  .progress-meta { display: flex; justify-content: space-between; font-size: 0.82rem; color: var(--muted); margin-bottom: 20px; }
+
+  /* Question card */
+  .q-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; margin-bottom: 16px; }
+  .q-badge { display: inline-block; background: #312e81; color: var(--primary-light); border-radius: 6px; padding: 3px 10px; font-size: 0.75rem; font-weight: 600; margin-bottom: 12px; }
+  .q-text { font-size: 1.05rem; line-height: 1.6; margin-bottom: 20px; color: var(--text); }
+  .q-text code { background: #0f172a; color: #7dd3fc; padding: 2px 6px; border-radius: 4px; font-family: 'Consolas', monospace; font-size: 0.92em; }
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .opt { display: flex; align-items: flex-start; gap: 12px; background: var(--card2); border: 2px solid var(--border); border-radius: 8px; padding: 14px 16px; cursor: pointer; transition: all .18s; user-select: none; }
+  .opt:hover:not(.disabled) { border-color: var(--primary-light); background: #1e2d4a; }
+  .opt.selected { border-color: var(--primary); background: #1e2756; }
+  .opt.correct { border-color: var(--success); background: #052e16; }
+  .opt.wrong { border-color: var(--danger); background: #2d0a0a; }
+  .opt.disabled { cursor: default; }
+  .opt-letter { width: 28px; height: 28px; min-width: 28px; border-radius: 50%; background: var(--border); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.8rem; color: var(--text); flex-shrink: 0; }
+  .opt.selected .opt-letter { background: var(--primary); }
+  .opt.correct .opt-letter { background: var(--success); }
+  .opt.wrong .opt-letter { background: var(--danger); }
+  .opt-text { font-size: 0.95rem; line-height: 1.5; color: var(--text); }
+  .opt-text code { background: #0a1929; color: #7dd3fc; padding: 1px 5px; border-radius: 3px; font-family: 'Consolas', monospace; font-size: 0.88em; }
+
+  /* Feedback */
+  .feedback { margin-top: 14px; padding: 12px 16px; border-radius: 8px; font-size: 0.9rem; line-height: 1.5; display: none; }
+  .feedback.correct-fb { background: #052e16; border: 1px solid var(--success); color: #86efac; }
+  .feedback.wrong-fb { background: #2d0a0a; border: 1px solid var(--danger); color: #fca5a5; }
+
+  /* Nav buttons */
+  .nav-row { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; }
+  .btn { border: none; border-radius: 8px; padding: 11px 24px; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all .18s; }
+  .btn-sec { background: var(--card2); color: var(--text); border: 1px solid var(--border); }
+  .btn-sec:hover { background: var(--border); }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-primary:hover { background: #4338ca; }
+  .btn-primary:disabled { background: var(--border); cursor: not-allowed; }
+  .btn-success { background: var(--success); color: #fff; }
+  .btn-success:hover { background: #15803d; }
+  .score-live { font-size: 0.88rem; color: var(--muted); }
+
+  /* ===== RESULT SCREEN ===== */
+  #result-screen { display: none; max-width: 720px; margin: 40px auto; padding: 0 20px 80px; }
+  .result-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 40px; text-align: center; }
+  .score-circle { width: 140px; height: 140px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0 auto 24px; border: 6px solid; }
+  .score-num { font-size: 2.6rem; font-weight: 800; }
+  .score-label { font-size: 0.8rem; color: var(--muted); }
+  .result-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 28px 0; }
+  .stat-box { background: var(--card2); border-radius: 10px; padding: 18px; }
+  .stat-box .s-val { font-size: 1.6rem; font-weight: 700; }
+  .stat-box .s-lbl { font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
+  .topic-breakdown { text-align: left; margin-top: 28px; }
+  .topic-breakdown h3 { color: var(--primary-light); margin-bottom: 14px; font-size: 1rem; }
+  .tb-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .tb-name { width: 180px; font-size: 0.85rem; color: var(--muted); flex-shrink: 0; }
+  .tb-bar-wrap { flex: 1; background: var(--border); border-radius: 999px; height: 10px; overflow: hidden; }
+  .tb-bar { height: 100%; border-radius: 999px; }
+  .tb-score { font-size: 0.82rem; color: var(--text); min-width: 50px; text-align: right; }
+  .result-actions { display: flex; gap: 12px; justify-content: center; margin-top: 28px; flex-wrap: wrap; }
+
+  /* ===== REVIEW ===== */
+  #review-screen { display: none; max-width: 820px; margin: 0 auto; padding: 24px 20px 80px; }
+  .review-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+  .review-q { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; margin-bottom: 14px; }
+  .review-q .status-tag { display: inline-block; padding: 3px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; margin-bottom: 10px; }
+  .tag-correct { background: #052e16; color: #86efac; border: 1px solid var(--success); }
+  .tag-wrong { background: #2d0a0a; color: #fca5a5; border: 1px solid var(--danger); }
+  .tag-skip { background: #1c1a02; color: #fde68a; border: 1px solid #854d0e; }
+
+  /* Misc */
+  .hidden { display: none !important; }
+  @media (max-width: 540px) {
+    .result-stats { grid-template-columns: 1fr 1fr; }
+    .tb-name { width: 130px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🎯 Quiz Ôn Tập Giữa Kỳ</h1>
+  <p>Phát Triển Hệ Thống Web – Phủ toàn bộ 8 chủ đề lý thuyết</p>
+</div>
+
+<!-- ===== SETUP ===== -->
+<div id="setup-screen">
+  <div class="setup-card">
+    <h2>⚙️ Tùy chọn bài thi</h2>
+
+    <p style="color:var(--muted);font-size:.88rem;margin-bottom:16px;">Chọn chủ đề muốn ôn (mặc định tất cả):</p>
+    <div class="topic-grid" id="topic-grid"></div>
+
+    <div class="row">
+      <label>Số câu hỏi:</label>
+      <input type="range" id="q-count-range" min="10" max="120" step="5" value="120" oninput="updateCountLabel()" />
+      <span id="sel-count-label">120</span> câu
+    </div>
+    <div class="row">
+      <label>Thứ tự câu hỏi:</label>
+      <select id="q-order">
+        <option value="random">Ngẫu nhiên</option>
+        <option value="sequential">Theo thứ tự</option>
+      </select>
+    </div>
+
+    <button class="btn-start" id="btn-start" onclick="startQuiz()">🚀 Bắt đầu làm bài</button>
+  </div>
+</div>
+
+<!-- ===== QUIZ ===== -->
+<div id="quiz-screen">
+  <div class="progress-bar-wrap"><div class="progress-bar-fill" id="prog-fill" style="width:0%"></div></div>
+  <div class="progress-meta">
+    <span id="prog-text">Câu 1 / 120</span>
+    <span class="score-live" id="score-live">✅ 0 &nbsp; ❌ 0</span>
+  </div>
+  <div id="q-container"></div>
+  <div class="nav-row">
+    <button class="btn btn-sec" id="btn-prev" onclick="prevQ()">← Trước</button>
+    <button class="btn btn-primary" id="btn-next" onclick="nextQ()">Tiếp theo →</button>
+    <button class="btn btn-success hidden" id="btn-finish" onclick="finishQuiz()">🏁 Nộp bài</button>
+  </div>
+</div>
+
+<!-- ===== RESULT ===== -->
+<div id="result-screen">
+  <div class="result-card">
+    <h2 style="color:var(--primary-light);margin-bottom:20px;">📊 Kết Quả Bài Thi</h2>
+    <div class="score-circle" id="score-circle">
+      <span class="score-num" id="score-pct">0%</span>
+      <span class="score-label">Điểm số</span>
+    </div>
+    <div class="result-stats">
+      <div class="stat-box"><div class="s-val" id="r-correct" style="color:var(--success)">0</div><div class="s-lbl">Câu đúng</div></div>
+      <div class="stat-box"><div class="s-val" id="r-wrong" style="color:var(--danger)">0</div><div class="s-lbl">Câu sai</div></div>
+      <div class="stat-box"><div class="s-val" id="r-total">0</div><div class="s-lbl">Tổng câu</div></div>
+    </div>
+    <div class="topic-breakdown">
+      <h3>📚 Kết quả theo chủ đề</h3>
+      <div id="topic-breakdown-list"></div>
+    </div>
+    <div class="result-actions">
+      <button class="btn btn-sec" onclick="showReview()">🔍 Xem lại bài làm</button>
+      <button class="btn btn-primary" onclick="restartQuiz()">🔄 Làm lại</button>
+      <button class="btn btn-sec" onclick="goSetup()">⚙️ Đổi cấu hình</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== REVIEW ===== -->
+<div id="review-screen">
+  <div class="review-header">
+    <h2 style="color:var(--primary-light)">🔍 Xem lại bài làm</h2>
+    <button class="btn btn-sec" onclick="showResult()">← Về kết quả</button>
+  </div>
+  <div id="review-list"></div>
+</div>
+
+<script>
+// =====================================================================
+// QUESTION BANK
+// =====================================================================
+const QUESTIONS = [
+
+// ===========================
+// CHỦ ĐỀ 1: JDBC
+// ===========================
+{ topic:"JDBC", q:"JDBC là viết tắt của gì?",
+  opts:["Java Database Connectivity","Java Data Bridge Connector","Java Direct Base Connection","Jakarta Database Connector"],
+  ans:0, explain:"JDBC = Java Database Connectivity – API cho phép Java tương tác với CSDL quan hệ." },
+
+{ topic:"JDBC", q:"Bước đầu tiên trong quy trình kết nối JDBC là gì?",
+  opts:["Gọi DriverManager.getConnection()","Khai báo Class.forName() để load driver","Tạo đối tượng Statement","Xử lý ResultSet"],
+  ans:1, explain:"Bước 1: Load driver bằng Class.forName(\"com.mysql.cj.jdbc.Driver\"). Nếu không tìm thấy sẽ ném ClassNotFoundException." },
+
+{ topic:"JDBC", q:"Định dạng URL kết nối MySQL qua JDBC là gì?",
+  opts:["mysql://hostname:port/dbName","jdbc:mysql://hostname:port/dbName","jdbc://mysql/hostname:port/dbName","db:mysql://hostname/port/dbName"],
+  ans:1, explain:"Cú pháp chuẩn: jdbc:mysql://hostname:port/databaseName" },
+
+{ topic:"JDBC", q:"Loại Statement nào giúp chống SQL Injection hiệu quả nhất?",
+  opts:["Statement","CallableStatement","PreparedStatement","BatchStatement"],
+  ans:2, explain:"PreparedStatement dùng placeholder (?) nên tham số được xử lý an toàn, tránh SQL Injection." },
+
+{ topic:"JDBC", q:"Phương thức executeQuery() được dùng cho loại lệnh SQL nào?",
+  opts:["INSERT","UPDATE","DELETE","SELECT"],
+  ans:3, explain:"executeQuery() dùng cho lệnh SELECT và trả về đối tượng ResultSet." },
+
+{ topic:"JDBC", q:"Phương thức executeUpdate() trả về kiểu dữ liệu gì?",
+  opts:["ResultSet","boolean","int (số hàng bị ảnh hưởng)","void"],
+  ans:2, explain:"executeUpdate() trả về int là số lượng hàng bị ảnh hưởng bởi lệnh INSERT/UPDATE/DELETE." },
+
+{ topic:"JDBC", q:"CallableStatement được dùng để làm gì?",
+  opts:["Thực thi câu lệnh SELECT phức tạp","Gọi Stored Procedure trong database","Thực thi batch query","Tạo kết nối bảo mật"],
+  ans:1, explain:"CallableStatement dùng để gọi Stored Procedure, cú pháp: { call procedureName(?) }" },
+
+{ topic:"JDBC", q:"Để đăng ký tham số OUTPUT trong CallableStatement, ta dùng phương thức nào?",
+  opts:["setOutParameter()","addOutParameter()","registerOutParameter()","declareOutParameter()"],
+  ans:2, explain:"registerOutParameter(index, Types.INTEGER) dùng để khai báo tham số đầu ra." },
+
+{ topic:"JDBC", q:"Tính chất ACID – chữ A (Atomicity) nghĩa là gì?",
+  opts:["Dữ liệu luôn nhất quán sau transaction","Transaction không thể chia nhỏ – hoặc toàn bộ thành công hoặc toàn bộ thất bại","Transaction độc lập với nhau","Kết quả commit được lưu vĩnh viễn"],
+  ans:1, explain:"Atomicity: Transaction là đơn vị không thể chia cắt – all or nothing." },
+
+{ topic:"JDBC", q:"Tính chất nào đảm bảo kết quả sau commit không bị mất dù hệ thống gặp sự cố?",
+  opts:["Atomicity","Consistency","Isolation","Durability"],
+  ans:3, explain:"Durability (Tính Bền Vững): sau khi commit, dữ liệu được lưu vĩnh viễn, không thể bị xóa bởi lỗi hệ thống." },
+
+{ topic:"JDBC", q:"Mặc định, JDBC có bật AutoCommit không?",
+  opts:["Không, phải bật thủ công","Có, mỗi lệnh SQL tự động commit ngay","Phụ thuộc vào driver","Phụ thuộc vào hệ quản trị CSDL"],
+  ans:1, explain:"Mặc định AutoCommit = true. Phải gọi conn.setAutoCommit(false) khi muốn tự quản lý transaction." },
+
+{ topic:"JDBC", q:"Để hủy bỏ các thay đổi trong một transaction, ta gọi phương thức nào?",
+  opts:["conn.undo()","conn.cancel()","conn.rollback()","conn.revert()"],
+  ans:2, explain:"conn.rollback() hoàn tác toàn bộ thay đổi chưa commit trong transaction hiện tại." },
+
+{ topic:"JDBC", q:"Batch Processing trong JDBC dùng để làm gì?",
+  opts:["Phân trang kết quả truy vấn","Nhóm nhiều lệnh SQL thực thi một lần để giảm số lần truy cập DB","Kết nối song song đến nhiều database","Mã hóa dữ liệu truyền đi"],
+  ans:1, explain:"Batch Processing gom nhiều SQL vào batch rồi executeBatch() một lần – tăng hiệu suất." },
+
+{ topic:"JDBC", q:"Phương thức nào thực thi toàn bộ batch và trả về mảng số hàng bị ảnh hưởng?",
+  opts:["runBatch()","commitBatch()","executeBatch()","flushBatch()"],
+  ans:2, explain:"executeBatch() thực thi tất cả SQL trong batch và trả về int[] – mỗi phần tử là số hàng bị ảnh hưởng." },
+
+{ topic:"JDBC", q:"ResultSet.TYPE_SCROLL_INSENSITIVE khác TYPE_FORWARD_ONLY ở điểm nào?",
+  opts:["Nhanh hơn TYPE_FORWARD_ONLY","Con trỏ có thể di chuyển cả tiến và lùi, không phản chiếu thay đổi của thread khác","Tự động commit sau mỗi lần đọc","Hỗ trợ cập nhật dữ liệu trực tiếp"],
+  ans:1, explain:"SCROLL_INSENSITIVE: di chuyển 2 chiều nhưng không phản ánh thay đổi từ thread khác. Mặc định là FORWARD_ONLY (chỉ tiến)." },
+
+{ topic:"JDBC", q:"Phương thức absolute(5) của ResultSet làm gì?",
+  opts:["Di chuyển con trỏ tiến thêm 5 hàng từ vị trí hiện tại","Di chuyển con trỏ về hàng thứ 5 tính từ đầu","Di chuyển con trỏ về hàng thứ 5 tính từ cuối","Đặt giới hạn kết quả tối đa là 5"],
+  ans:1, explain:"absolute(n) di chuyển con trỏ đến hàng thứ n (đếm từ 1). Nếu n âm, đếm từ cuối." },
+
+{ topic:"JDBC", q:"Exception nào bị ném khi Class.forName() không tìm thấy driver class?",
+  opts:["SQLException","IOException","ClassNotFoundException","DriverNotFoundException"],
+  ans:2, explain:"Class.forName() ném ClassNotFoundException nếu class driver không tồn tại trong classpath." },
+
+{ topic:"JDBC", q:"Tính chất Isolation trong ACID đảm bảo điều gì?",
+  opts:["Mỗi transaction chạy độc lập, không nhìn thấy kết quả của transaction chưa hoàn thành khác","Dữ liệu luôn ở trạng thái hợp lệ","Kết quả không thể mất","Hoặc tất cả thành công hoặc tất cả thất bại"],
+  ans:0, explain:"Isolation: các transaction đồng thời được cô lập – transaction A không thấy dữ liệu chưa commit của transaction B." },
+
+// ===========================
+// CHỦ ĐỀ 2: HIBERNATE
+// ===========================
+{ topic:"Hibernate", q:"ORM là viết tắt của gì?",
+  opts:["Object Relational Mapping","Open Resource Model","Object Request Manager","Optimized Record Management"],
+  ans:0, explain:"ORM = Object-Relational Mapping – kỹ thuật ánh xạ giữa đối tượng Java và bảng trong CSDL quan hệ." },
+
+{ topic:"Hibernate", q:"Annotation nào đánh dấu một class Java là Persistent Class trong Hibernate?",
+  opts:["@Table","@Persistent","@Entity","@Model"],
+  ans:2, explain:"@Entity (từ jakarta.persistence.*) đánh dấu class là Persistent Class – được Hibernate quản lý." },
+
+{ topic:"Hibernate", q:"@GeneratedValue(strategy = GenerationType.IDENTITY) có nghĩa là gì?",
+  opts:["Hibernate tự sinh UUID","Database tự tăng giá trị primary key","Dùng sequence của database","Dùng bảng riêng để theo dõi sequence"],
+  ans:1, explain:"GenerationType.IDENTITY: cơ sở dữ liệu tự tăng giá trị (AUTO_INCREMENT trong MySQL)." },
+
+{ topic:"Hibernate", q:"Fetch mặc định của @ManyToOne là gì?",
+  opts:["LAZY","EAGER","BOTH","AUTO"],
+  ans:1, explain:"@ManyToOne mặc định là FetchType.EAGER – load đối tượng liên quan ngay lập tức." },
+
+{ topic:"Hibernate", q:"Fetch mặc định của @OneToMany là gì?",
+  opts:["EAGER","LAZY","NONE","MANUAL"],
+  ans:1, explain:"@OneToMany mặc định là FetchType.LAZY – chỉ load dữ liệu liên quan khi cần. Tốt hơn về hiệu suất." },
+
+{ topic:"Hibernate", q:"Trong Hibernate, đối tượng ở trạng thái 'transient' nghĩa là gì?",
+  opts:["Đã được lưu vào database","Đã gắn với Session nhưng chưa commit","Mới tạo, chưa gắn với Session nào","Đã bị xóa khỏi database"],
+  ans:2, explain:"Transient: object vừa tạo bằng new, không có kết nối với Session, chưa được Hibernate quản lý." },
+
+{ topic:"Hibernate", q:"Phương thức nào chuyển object từ trạng thái transient sang persistent?",
+  opts:["session.save()","session.persist()","session.attach()","session.connect()"],
+  ans:1, explain:"session.persist(object) gắn object với Session và chuẩn bị INSERT vào database." },
+
+{ topic:"Hibernate", q:"Phương thức session.merge() dùng để làm gì?",
+  opts:["Xóa đối tượng khỏi database","Cập nhật (UPDATE) đối tượng trong database","Đọc đối tượng từ database","Tạo mới đối tượng trong database"],
+  ans:1, explain:"session.merge() cập nhật (merge) đối tượng vào database, tương ứng với UPDATE." },
+
+{ topic:"Hibernate", q:"Thuộc tính 'mappedBy' trong @OneToMany được dùng để làm gì?",
+  opts:["Chỉ định tên cột khóa ngoại trong bảng","Tham chiếu đến tên property trong class phía đối diện sở hữu quan hệ","Chỉ định tên bảng trung gian","Bật lazy loading"],
+  ans:1, explain:"mappedBy=\"category\" nghĩa là: phía Category không sở hữu quan hệ – Product mới là bên sở hữu (có @JoinColumn)." },
+
+{ topic:"Hibernate", q:"@JoinTable được dùng trong quan hệ nào?",
+  opts:["@OneToOne","@ManyToOne","@OneToMany","@ManyToMany"],
+  ans:3, explain:"@JoinTable dùng trong @ManyToMany để chỉ định bảng trung gian (junction table) và các cột khóa ngoại." },
+
+{ topic:"Hibernate", q:"HQL (Hibernate Query Language) làm việc với cái gì?",
+  opts:["Tên bảng và tên cột trong database","Tên class Java và tên property của object","Câu lệnh SQL thuần túy","Cả tên bảng lẫn tên class"],
+  ans:1, explain:"HQL làm việc với đối tượng Java (class, property) – không phụ thuộc vào cấu trúc bảng trong DB." },
+
+{ topic:"Hibernate", q:"Trong HQL, cú pháp nào dùng để lấy tất cả đối tượng Category?",
+  opts:["SELECT * FROM category","FROM Category","GET ALL Category","QUERY Category ALL"],
+  ans:1, explain:"HQL: FROM Category (tên class, không phải tên bảng). Không cần SELECT *." },
+
+{ topic:"Hibernate", q:"Trong HQL, named parameter được khai báo bằng ký tự nào?",
+  opts:["? (dấu hỏi)","$ (đô la)",": (hai chấm)","@ (at)"],
+  ans:2, explain:"HQL dùng :paramName để đặt named parameter, sau đó setParameter(\"paramName\", value)." },
+
+{ topic:"Hibernate", q:"MutationQuery trong Hibernate dùng để thực thi loại lệnh nào?",
+  opts:["Chỉ SELECT","INSERT, UPDATE, DELETE","Chỉ INSERT","Chỉ DELETE"],
+  ans:1, explain:"MutationQuery (createMutationQuery) dùng cho các lệnh thay đổi dữ liệu: UPDATE, DELETE trong HQL." },
+
+{ topic:"Hibernate", q:"Bước đầu tiên trong Criteria API là gì?",
+  opts:["Tạo CriteriaQuery","Tạo CriteriaBuilder từ session","Gọi query.from()","Gọi query.select()"],
+  ans:1, explain:"Bước 1: CriteriaBuilder builder = session.getCriteriaBuilder(); – đây là entry point của Criteria API." },
+
+{ topic:"Hibernate", q:"Predicate builder.between(root.get(\"price\"), 100, 1000) có nghĩa là gì?",
+  opts:["Lọc các record có price = 100 hoặc price = 1000","Lọc các record có price trong khoảng 100 đến 1000","Lấy record có price lớn hơn 100","Lấy record có price nhỏ hơn 1000"],
+  ans:1, explain:"between() tạo điều kiện WHERE price BETWEEN 100 AND 1000." },
+
+{ topic:"Hibernate", q:"SessionFactory trong Hibernate có đặc điểm gì?",
+  opts:["Tạo mới mỗi lần kết nối database","Tồn tại suốt vòng đời ứng dụng, thường có 1 instance/database","Chỉ tồn tại trong phạm vi một request","Được tạo từ Session"],
+  ans:1, explain:"SessionFactory có vòng đời bằng ứng dụng, tốn kém để tạo nên chỉ tạo 1 lần." },
+
+{ topic:"Hibernate", q:"Đối tượng Session trong Hibernate có vòng đời như thế nào?",
+  opts:["Bằng vòng đời ứng dụng","Bằng vòng đời SessionFactory","Ngắn – chỉ cho một đơn vị công việc (unit of work)","Kéo dài bằng phiên làm việc của người dùng"],
+  ans:2, explain:"Session đại diện cho một kết nối vật lý ngắn hạn với DB, dùng cho một unit of work rồi đóng lại." },
+
+{ topic:"Hibernate", q:"Annotation nào ánh xạ cột có tên khác tên property Java?",
+  opts:["@ColumnName","@Field","@Column(name=\"...\")","@Map(column=\"...\")"],
+  ans:2, explain:"@Column(name=\"created_date\") ánh xạ property Java sang cột có tên khác trong database." },
+
+// ===========================
+// CHỦ ĐỀ 3: SPRING FRAMEWORK
+// ===========================
+{ topic:"Spring Framework", q:"IoC trong Spring Framework là viết tắt của gì?",
+  opts:["Interface of Classes","Inversion of Control","Integration of Components","Internal Object Container"],
+  ans:1, explain:"IoC = Inversion of Control: đảo ngược quyền điều khiển – Spring Container tạo và quản lý object thay developer." },
+
+{ topic:"Spring Framework", q:"DI (Dependency Injection) có mấy loại trong Spring?",
+  opts:["1 loại (Setter Injection)","2 loại (Constructor và Setter Injection)","3 loại (Constructor, Setter và Field Injection)","4 loại"],
+  ans:1, explain:"Spring hỗ trợ 2 loại DI chính: Constructor Injection và Setter Injection." },
+
+{ topic:"Spring Framework", q:"'Hollywood Principle' trong IoC Container nghĩa là gì?",
+  opts:["Ưu tiên hiệu suất cao","Don't call us, we'll call you – Container chủ động inject dependency","Mọi thứ đều là service","Phân tách UI khỏi logic"],
+  ans:1, explain:"Hollywood Principle: \"Don't call us, we'll call you\" – developer không tự tạo dependency, Container tự inject." },
+
+{ topic:"Spring Framework", q:"Bean scope 'singleton' trong Spring có nghĩa là gì?",
+  opts:["Tạo một instance mới mỗi khi request","Chỉ có một instance duy nhất trong toàn bộ Container","Chỉ dùng trong single-threaded context","Xóa instance sau mỗi request"],
+  ans:1, explain:"Singleton scope (mặc định): Spring Container chỉ tạo 1 instance cho mỗi bean definition." },
+
+{ topic:"Spring Framework", q:"Bean scope nào tạo instance mới mỗi khi được yêu cầu?",
+  opts:["singleton","session","prototype","request"],
+  ans:2, explain:"prototype scope: mỗi lần getBean() hoặc inject, Spring tạo một instance mới." },
+
+{ topic:"Spring Framework", q:"@Autowired trong Spring được dùng để làm gì?",
+  opts:["Đánh dấu class là Bean","Tự động inject dependency","Cấu hình scope của Bean","Khai báo transaction"],
+  ans:1, explain:"@Autowired: Spring tự động tìm bean phù hợp và inject vào field, constructor hoặc setter." },
+
+{ topic:"Spring Framework", q:"@Qualifier được dùng khi nào?",
+  opts:["Khi muốn đổi tên bean","Khi có nhiều bean cùng type và cần chỉ định bean cụ thể để inject","Khi muốn disable một bean","Khi cần inject danh sách bean"],
+  ans:1, explain:"@Qualifier(\"beanName\") kết hợp với @Autowired để chỉ định bean cụ thể khi có nhiều bean cùng kiểu." },
+
+{ topic:"Spring Framework", q:"ApplicationContext nào dùng để load cấu hình từ file XML trong classpath?",
+  opts:["FileSystemXmlApplicationContext","AnnotationConfigApplicationContext","ClassPathXmlApplicationContext","XmlWebApplicationContext"],
+  ans:2, explain:"ClassPathXmlApplicationContext: load file XML cấu hình từ classpath (src/main/resources/)." },
+
+{ topic:"Spring Framework", q:"ApplicationContext nào dùng cho cấu hình Java thuần (không XML)?",
+  opts:["ClassPathXmlApplicationContext","FileSystemXmlApplicationContext","AnnotationConfigApplicationContext","WebApplicationContext"],
+  ans:2, explain:"AnnotationConfigApplicationContext: load cấu hình từ class được đánh dấu @Configuration." },
+
+{ topic:"Spring Framework", q:"AOP (Aspect-Oriented Programming) trong Spring giúp làm gì?",
+  opts:["Tối ưu truy vấn SQL","Thêm chức năng phụ (logging, security...) vào code mà không sửa đổi class gốc","Tự động tạo UI","Quản lý kết nối database"],
+  ans:1, explain:"AOP tách các concern phụ (cross-cutting concerns) ra khỏi business logic, không cần sửa code gốc." },
+
+{ topic:"Spring Framework", q:"Autowire mode 'byType' hoạt động như thế nào?",
+  opts:["Inject bean theo tên property","Inject bean theo kiểu dữ liệu của property","Thử constructor trước rồi mới dùng byType","Inject qua constructor theo kiểu"],
+  ans:1, explain:"byType: Spring tìm bean có type khớp với type của property và inject vào. Lỗi nếu có nhiều bean cùng type." },
+
+{ topic:"Spring Framework", q:"Bean Lifecycle trong Spring gồm mấy giai đoạn chính?",
+  opts:["2 giai đoạn","3 giai đoạn (Activation, Initialization, Destruction)","4 giai đoạn","5 giai đoạn"],
+  ans:1, explain:"3 giai đoạn: Activation (tạo) → Initialization (khởi tạo, post-init callback) → Destruction (pre-destroy callback)." },
+
+// ===========================
+// CHỦ ĐỀ 4: SPRING MVC
+// ===========================
+{ topic:"Spring MVC", q:"DispatcherServlet trong Spring MVC có vai trò gì?",
+  opts:["Quản lý kết nối database","Là Front Controller – nhận và điều phối TẤT CẢ HTTP request","Render giao diện HTML","Quản lý phiên người dùng"],
+  ans:1, explain:"DispatcherServlet là Front Controller – điểm vào duy nhất nhận mọi request và điều hướng đến controller phù hợp." },
+
+{ topic:"Spring MVC", q:"Annotation @Controller khác @RestController ở điểm nào?",
+  opts:["@Controller chỉ dùng cho GET request","@RestController tự động thêm @ResponseBody – trả về dữ liệu trực tiếp (JSON) thay vì tên view","@Controller không hỗ trợ Thymeleaf","@RestController không cần @RequestMapping"],
+  ans:1, explain:"@RestController = @Controller + @ResponseBody. Mọi method tự động serialize kết quả thành JSON/XML." },
+
+{ topic:"Spring MVC", q:"@RequestParam dùng để lấy dữ liệu từ đâu?",
+  opts:["Body của request (JSON)","Path variable trong URL (/products/{id})","Query parameters trong URL (?key=value)","Cookie"],
+  ans:2, explain:"@RequestParam lấy query string parameters: /search?keyword=abc → @RequestParam String keyword" },
+
+{ topic:"Spring MVC", q:"@PathVariable dùng để lấy dữ liệu từ đâu?",
+  opts:["Query string (?id=5)","Segment trong URL path (/products/{id})","Header của request","Body JSON"],
+  ans:1, explain:"@PathVariable lấy giá trị từ URL template: @GetMapping(\"/products/{id}\") + @PathVariable int id" },
+
+{ topic:"Spring MVC", q:"@ModelAttribute trong handler method dùng để làm gì?",
+  opts:["Trả về tên của Model","Bind dữ liệu từ form HTML vào đối tượng Java","Đánh dấu method là async","Inject service vào controller"],
+  ans:1, explain:"@ModelAttribute bind dữ liệu form (POST request) vào POJO Java tương ứng." },
+
+{ topic:"Spring MVC", q:"@EnableTransactionManagement trong Spring MVC có tác dụng gì?",
+  opts:["Tự động tạo bảng trong database","Bật hỗ trợ quản lý transaction qua annotation @Transactional","Tạo SessionFactory tự động","Bật CORS toàn cục"],
+  ans:1, explain:"@EnableTransactionManagement cho phép dùng @Transactional annotation để quản lý transaction trong Spring." },
+
+{ topic:"Spring MVC", q:"Front Controller Pattern trong Spring MVC giải quyết vấn đề gì?",
+  opts:["Tối ưu truy vấn database","Tập trung xử lý request vào một điểm duy nhất thay vì nhiều servlet riêng lẻ","Tăng tốc render view","Quản lý session người dùng"],
+  ans:1, explain:"Front Controller: một điểm vào duy nhất (DispatcherServlet) xử lý mọi request, điều phối đến controller phù hợp." },
+
+{ topic:"Spring MVC", q:"Handler method có thể trả về kiểu gì để chỉ định tên View?",
+  opts:["int","Object","String (tên view)","byte[]"],
+  ans:2, explain:"Trả về String là tên view (ví dụ: return \"home\") – ViewResolver sẽ map sang file template tương ứng." },
+
+{ topic:"Spring MVC", q:"@PropertySource(\"classpath:database.properties\") có tác dụng gì?",
+  opts:["Load file properties từ classpath vào Environment","Tạo datasource tự động","Cấu hình Hibernate dialect","Khai báo transaction manager"],
+  ans:0, explain:"@PropertySource load file .properties từ classpath, sau đó dùng @Autowired Environment để đọc giá trị." },
+
+// ===========================
+// CHỦ ĐỀ 5: THYMELEAF
+// ===========================
+{ topic:"Thymeleaf", q:"Thymeleaf là gì?",
+  opts:["Framework JavaScript phía client","Java library làm template engine cho HTML/XML","ORM framework cho Java","REST client library"],
+  ans:1, explain:"Thymeleaf là Java template engine, cho phép tạo trang HTML động, tích hợp chặt chẽ với Spring MVC." },
+
+{ topic:"Thymeleaf", q:"Expression ${...} trong Thymeleaf dùng để làm gì?",
+  opts:["Tạo URL","Hiển thị tin nhắn đa ngôn ngữ","Lấy giá trị biến từ Model","Lấy giá trị từ object đã select"],
+  ans:2, explain:"${...}: Variable Expression – lấy giá trị từ Model mà Controller đã thêm vào (phổ biến nhất)." },
+
+{ topic:"Thymeleaf", q:"Expression *{...} trong Thymeleaf dùng trong ngữ cảnh nào?",
+  opts:["Tạo link động","Truy cập biến toàn cục","Truy cập property của object đã bind qua th:object","Đọc file properties"],
+  ans:2, explain:"*{...}: Selection Variable – chỉ hoạt động sau khi đã dùng th:object để chọn object. Ví dụ: *{name} khi th:object=\"${user}\"." },
+
+{ topic:"Thymeleaf", q:"Expression #{...} trong Thymeleaf dùng để làm gì?",
+  opts:["Tạo link động","Hiển thị message từ file properties (i18n/đa ngôn ngữ)","Thực thi JavaScript","Lấy giá trị từ form"],
+  ans:1, explain:"#{...}: Message Expression – lấy nội dung từ file .properties để hỗ trợ đa ngôn ngữ." },
+
+{ topic:"Thymeleaf", q:"Expression @{...} trong Thymeleaf dùng để làm gì?",
+  opts:["Khai báo annotation","Tạo URL/đường dẫn","Truy cập Spring Bean","Chạy script phía server"],
+  ans:1, explain:"@{...}: Link/URL Expression – tạo URL động. Ví dụ: th:href=\"@{/home}\" hoặc th:href=\"@{/products/{id}(id=${p.id})}\"." },
+
+{ topic:"Thymeleaf", q:"Cú pháp th:each để lặp danh sách là gì?",
+  opts:["th:each=\"item in ${items}\"","th:each=\"item : ${items}\"","th:for=\"item : ${items}\"","th:loop=\"item of ${items}\""],
+  ans:1, explain:"Cú pháp: th:each=\"item : ${items}\" – dấu hai chấm ngăn cách biến lặp và collection." },
+
+{ topic:"Thymeleaf", q:"Trong th:each, biến status.count trả về gì?",
+  opts:["Index bắt đầu từ 0","Index bắt đầu từ 1","Tổng số phần tử","Phần tử hiện tại"],
+  ans:1, explain:"status.count: đếm từ 1. status.index đếm từ 0. status.size là tổng số phần tử." },
+
+{ topic:"Thymeleaf", q:"th:replace=\"base :: header\" có tác dụng gì?",
+  opts:["Chèn nội dung fragment vào bên trong element hiện tại","Thay thế toàn bộ element hiện tại bằng fragment","Bao gồm nội dung nhưng giữ element gốc","Tạo alias cho fragment"],
+  ans:1, explain:"th:replace: THAY THẾ toàn bộ element (kể cả tag hiện tại) bằng nội dung của fragment." },
+
+{ topic:"Thymeleaf", q:"th:insert khác th:replace như thế nào?",
+  opts:["th:insert thay thế toàn bộ element, th:replace chèn vào bên trong","th:insert chèn fragment vào BÊN TRONG element giữ lại tag gốc, th:replace thay thế cả tag","Hai cái hoàn toàn giống nhau","th:insert chỉ dùng cho text"],
+  ans:1, explain:"th:insert: giữ lại tag gốc và CHÈN fragment vào bên trong. th:replace: thay thế toàn bộ tag gốc bằng fragment." },
+
+{ topic:"Thymeleaf", q:"th:field=\"*{name}\" trong form dùng để làm gì?",
+  opts:["Đặt tên cho form field","Bind input với property 'name' của object được chọn qua th:object","Validate dữ liệu input","Tạo hidden field"],
+  ans:1, explain:"th:field=\"*{name}\" bind input field với property 'name' của model object, tự động tạo id, name và value." },
+
+{ topic:"Thymeleaf", q:"th:unless=\"${isAdmin}\" hoạt động như thế nào?",
+  opts:["Hiển thị khi isAdmin = true","Hiển thị khi isAdmin = false (ngược với th:if)","Ẩn element dù isAdmin là gì","Chỉ hiển thị cho admin"],
+  ans:1, explain:"th:unless là phủ định của th:if – hiển thị element khi điều kiện là FALSE." },
+
+{ topic:"Thymeleaf", q:"th:fragment dùng để làm gì?",
+  opts:["Import CSS fragment","Định nghĩa một đoạn HTML có thể tái sử dụng","Loop qua một fragment","Kế thừa từ template cha"],
+  ans:1, explain:"th:fragment=\"name\" đánh dấu một đoạn HTML là fragment có thể được include/replace từ template khác." },
+
+// ===========================
+// CHỦ ĐỀ 6: REST API
+// ===========================
+{ topic:"REST API", q:"REST được đề xuất vào năm nào và bởi ai?",
+  opts:["1991 bởi Tim Berners-Lee","2000 bởi Roy Fielding","2005 bởi Martin Fowler","1999 bởi James Gosling"],
+  ans:1, explain:"REST (Representational State Transfer) được Roy Fielding đề xuất trong luận án tiến sĩ năm 2000." },
+
+{ topic:"REST API", q:"@RestController trong Spring MVC tương đương với annotation nào?",
+  opts:["@Controller + @RequestMapping","@Controller + @ResponseBody","@Controller + @Service","@Component + @ResponseBody"],
+  ans:1, explain:"@RestController = @Controller + @ResponseBody. Mọi method tự động serialize kết quả thành JSON/XML." },
+
+{ topic:"REST API", q:"HTTP method nào dùng để cập nhật MỘT PHẦN tài nguyên?",
+  opts:["PUT","POST","PATCH","UPDATE"],
+  ans:2, explain:"PATCH: cập nhật một phần (partial update). PUT: cập nhật toàn bộ (full update/replace)." },
+
+{ topic:"REST API", q:"@RequestBody trong Spring MVC làm gì?",
+  opts:["Lấy dữ liệu từ URL query string","Chuyển đổi JSON trong request body thành Java object","Lấy dữ liệu từ form HTML","Đọc dữ liệu từ cookie"],
+  ans:1, explain:"@RequestBody: Spring dùng Jackson để deserialize JSON từ request body thành đối tượng Java." },
+
+{ topic:"REST API", q:"ResponseEntity<>(data, HttpStatus.CREATED) trả về HTTP status code nào?",
+  opts:["200","201","204","400"],
+  ans:1, explain:"HttpStatus.CREATED = HTTP 201 – thường dùng khi tạo thành công tài nguyên mới qua POST." },
+
+{ topic:"REST API", q:"@JsonIgnore được dùng để làm gì?",
+  opts:["Bỏ qua field khi serialize/deserialize JSON","Đánh dấu field là bắt buộc trong JSON","Đổi tên field trong JSON","Format ngày giờ trong JSON"],
+  ans:0, explain:"@JsonIgnore: loại bỏ field/method này khỏi quá trình chuyển đổi JSON ↔ Java." },
+
+{ topic:"REST API", q:"@JsonProperty(value=\"product_name\") có tác dụng gì?",
+  opts:["Đánh dấu field là primary key","Đổi tên key trong JSON output thành 'product_name'","Validate field không được null","Ẩn field khỏi JSON"],
+  ans:1, explain:"@JsonProperty cho phép đặt tên khác trong JSON. Ví dụ: field Java tên 'name' → JSON key 'product_name'." },
+
+{ topic:"REST API", q:"CORS là gì và tại sao cần cấu hình nó?",
+  opts:["Cơ chế mã hóa dữ liệu truyền đi","Cross-Origin Resource Sharing – cho phép frontend domain khác gọi API","Phương thức xác thực REST","Giao thức cache phía client"],
+  ans:1, explain:"CORS cho phép browser ở domain A gọi API từ domain B. Mặc định browser chặn cross-origin requests." },
+
+{ topic:"REST API", q:"@CrossOrigin(origins=\"http://example.com\") đặt ở đâu để áp dụng cho cả controller?",
+  opts:["Trên method cụ thể","Trên class Controller","Trong file application.properties","Trên class Entity"],
+  ans:1, explain:"@CrossOrigin đặt trên class Controller sẽ áp dụng cho TẤT CẢ method trong controller đó." },
+
+{ topic:"REST API", q:"@JsonInclude(JsonInclude.Include.NON_NULL) có tác dụng gì?",
+  opts:["Yêu cầu field không được null","Loại bỏ các field có giá trị null khỏi JSON output","Chỉ include field null","Validate null check tự động"],
+  ans:1, explain:"NON_NULL: các field có giá trị null sẽ không xuất hiện trong JSON response – giảm kích thước payload." },
+
+{ topic:"REST API", q:"DELETE method thành công thường trả về HTTP status code nào?",
+  opts:["200 OK","201 Created","204 No Content","404 Not Found"],
+  ans:2, explain:"HTTP 204 No Content: DELETE thành công nhưng không có nội dung trả về. Dùng @ResponseStatus(HttpStatus.NO_CONTENT)." },
+
+{ topic:"REST API", q:"Trong REST, tài nguyên được định danh bằng gì?",
+  opts:["Tên method HTTP","URI (Uniform Resource Identifier)","Tên class Java","Session ID"],
+  ans:1, explain:"Mọi tài nguyên trong REST được định danh bởi URI duy nhất. Ví dụ: /api/products/1" },
+
+// ===========================
+// CHỦ ĐỀ 7: SPRING SECURITY
+// ===========================
+{ topic:"Spring Security", q:"Authentication và Authorization khác nhau như thế nào?",
+  opts:["Hoàn toàn giống nhau","Authentication xác thực danh tính (ai?), Authorization phân quyền (được làm gì?)","Authorization xác thực danh tính, Authentication phân quyền","Authentication chỉ dùng cho API"],
+  ans:1, explain:"Authentication: xác minh bạn là ai (login). Authorization: kiểm tra bạn được phép làm gì (role/permission)." },
+
+{ topic:"Spring Security", q:"BCryptPasswordEncoder trong Spring Security dùng để làm gì?",
+  opts:["Mã hóa dữ liệu truyền qua mạng","Hash password trước khi lưu vào database","Tạo JWT token","Mã hóa session cookie"],
+  ans:1, explain:"BCryptPasswordEncoder hash password an toàn bằng thuật toán bcrypt trước khi lưu DB, mỗi lần hash cho kết quả khác nhau." },
+
+{ topic:"Spring Security", q:"UserDetailsService trong Spring Security có nhiệm vụ gì?",
+  opts:["Quản lý session người dùng","Load thông tin user từ database dựa vào username","Tạo JWT token","Xác thực token mỗi request"],
+  ans:1, explain:"UserDetailsService.loadUserByUsername(username) được Spring Security gọi để load user info từ DB khi đăng nhập." },
+
+{ topic:"Spring Security", q:"SecurityContextHolder dùng để làm gì?",
+  opts:["Lưu cấu hình security","Lưu thông tin người dùng đang đăng nhập trong thread hiện tại","Quản lý danh sách user","Kiểm tra CSRF token"],
+  ans:1, explain:"SecurityContextHolder lưu Authentication object của user đang login. Truy cập bằng SecurityContextHolder.getContext().getAuthentication()." },
+
+{ topic:"Spring Security", q:"hasRole(\"ADMIN\") và hasAnyRole(\"USER\", \"ADMIN\") khác nhau như thế nào?",
+  opts:["Hoàn toàn giống nhau","hasRole chỉ cho phép 1 role cụ thể, hasAnyRole cho phép nhiều role (thỏa 1 trong số đó)","hasAnyRole nghiêm ngặt hơn","hasRole dùng cho API, hasAnyRole dùng cho web"],
+  ans:1, explain:"hasRole(\"ADMIN\"): chỉ ADMIN. hasAnyRole(\"USER\",\"ADMIN\"): USER hoặc ADMIN đều được phép." },
+
+{ topic:"Spring Security", q:"permitAll() trong SecurityFilterChain có nghĩa là gì?",
+  opts:["Yêu cầu xác thực","Cho phép mọi người truy cập kể cả chưa đăng nhập","Chỉ admin mới truy cập được","Chặn tất cả truy cập"],
+  ans:1, explain:"permitAll(): không yêu cầu xác thực, ai cũng có thể truy cập URL đó (kể cả anonymous user)." },
+
+{ topic:"Spring Security", q:"@EnableWebSecurity được đặt ở đâu?",
+  opts:["Trên class Controller","Trên class cấu hình Spring Security (@Configuration class)","Trên class Entity","Trên method @Bean"],
+  ans:1, explain:"@EnableWebSecurity đặt trên class @Configuration để bật Spring Security cho web application." },
+
+{ topic:"Spring Security", q:"sec:authorize=\"isAuthenticated()\" trong Thymeleaf có tác dụng gì?",
+  opts:["Ẩn element với người dùng đã đăng nhập","Chỉ hiển thị element cho người dùng đã đăng nhập","Hiển thị cho anonymous user","Kiểm tra quyền admin"],
+  ans:1, explain:"sec:authorize=\"isAuthenticated()\" chỉ hiển thị nội dung nếu người dùng đã đăng nhập (authenticated)." },
+
+{ topic:"Spring Security", q:"Luồng xác thực của Spring Security đi qua các bước nào?",
+  opts:["Controller → Service → Database","Browser → SecurityFilter → AuthenticationManager → UserDetailsService → Database","Browser → Controller → Security → Database","Request → JWT → Controller"],
+  ans:1, explain:"Luồng: Browser gửi request → SecurityFilter chặn → AuthenticationManager xác thực → UserDetailsService load user từ DB." },
+
+{ topic:"Spring Security", q:"CSRF là gì và Spring Security mặc định có bật chống CSRF không?",
+  opts:["Cross-Site Scripting, mặc định tắt","Cross-Site Request Forgery, mặc định BẬT","Cross-Server Request Forgery, mặc định tắt","Content Security Request Filter, mặc định bật"],
+  ans:1, explain:"CSRF = Cross-Site Request Forgery. Spring Security mặc định BẬT CSRF protection. Cần csrf().disable() khi làm REST API stateless." },
+
+{ topic:"Spring Security", q:"failureUrl(\"/login?error=true\") trong formLogin() dùng để làm gì?",
+  opts:["URL để logout","Redirect đến URL này khi đăng nhập THẤT BẠI","URL xử lý login","Trang chủ sau khi đăng nhập"],
+  ans:1, explain:"failureUrl: URL redirect khi login thất bại (sai username/password). Thường dùng để hiển thị thông báo lỗi." },
+
+// ===========================
+// CHỦ ĐỀ 8: REACTJS
+// ===========================
+{ topic:"ReactJS", q:"ReactJS là gì và do công ty nào phát triển?",
+  opts:["Framework JavaScript của Google","Library JavaScript của Facebook để xây dựng UI","Framework Python của Amazon","Library CSS của Twitter"],
+  ans:1, explain:"ReactJS là JavaScript library do Facebook phát triển, chuyên xây dựng UI component tái sử dụng." },
+
+{ topic:"ReactJS", q:"Virtual DOM trong React giúp cải thiện điều gì?",
+  opts:["Bảo mật ứng dụng","Hiệu suất – chỉ cập nhật các node thực sự thay đổi thay vì render lại toàn bộ","Khả năng SEO","Quản lý state"],
+  ans:1, explain:"Virtual DOM: React so sánh (diffing) Virtual DOM với Real DOM, chỉ cập nhật những node khác nhau → nhanh hơn." },
+
+{ topic:"ReactJS", q:"JSX trong React cho phép làm gì?",
+  opts:["Viết CSS trong JavaScript","Viết HTML trực tiếp trong JavaScript","Gọi API từ component","Quản lý state toàn cục"],
+  ans:1, explain:"JSX (JavaScript XML): cú pháp mở rộng cho phép viết HTML trong JavaScript, được Babel compile thành React.createElement()." },
+
+{ topic:"ReactJS", q:"Trong JSX, thuộc tính CSS class được viết thế nào?",
+  opts:["class=\"...\"","className=\"...\"","cssClass=\"...\"","styleClass=\"...\""],
+  ans:1, explain:"JSX dùng className thay vì class (vì class là từ khóa trong JavaScript)." },
+
+{ topic:"ReactJS", q:"Props trong React có đặc điểm gì?",
+  opts:["Có thể thay đổi bởi component con","Immutable – component con không thể thay đổi props nhận được","Chỉ dùng được trong class component","Lưu trữ trạng thái component"],
+  ans:1, explain:"Props là immutable – component con KHÔNG được phép thay đổi props. Dữ liệu chỉ truyền một chiều từ cha → con." },
+
+{ topic:"ReactJS", q:"State trong React khi thay đổi sẽ kéo theo điều gì?",
+  opts:["Tải lại toàn bộ trang","Component re-render lại","Xóa toàn bộ Virtual DOM","Không có gì xảy ra"],
+  ans:1, explain:"Khi state thay đổi (qua setState/useState), component sẽ re-render để hiển thị dữ liệu mới." },
+
+{ topic:"ReactJS", q:"Class component trong React yêu cầu điều gì bắt buộc?",
+  opts:["Phải có constructor","Phải extends React.Component và có method render()","Phải dùng TypeScript","Phải khai báo state"],
+  ans:1, explain:"Class component: bắt buộc extends React.Component và có method render() trả về JSX." },
+
+{ topic:"ReactJS", q:"Hook useState trả về những gì?",
+  opts:["Chỉ trả về giá trị state hiện tại","Một mảng [giá trị state hiện tại, hàm để cập nhật state]","Đối tượng với get và set","Một Promise"],
+  ans:1, explain:"useState(initValue) trả về [currentValue, setterFunction]. Ví dụ: const [count, setCount] = useState(0)." },
+
+{ topic:"ReactJS", q:"useEffect(callback, []) – dependency array rỗng nghĩa là gì?",
+  opts:["Chạy mỗi khi component render","Chạy MỘT LẦN sau khi component mount (componentDidMount)","Không bao giờ chạy","Chạy khi component unmount"],
+  ans:1, explain:"useEffect(fn, []): dependency rỗng → chỉ chạy 1 lần sau khi component được mount lần đầu. Tương đương componentDidMount." },
+
+{ topic:"ReactJS", q:"useEffect không có dependency array thứ 2 sẽ chạy khi nào?",
+  opts:["Chỉ chạy 1 lần","Chạy MỖI LẦN component render","Không chạy","Chỉ chạy khi unmount"],
+  ans:1, explain:"useEffect(fn) không có dependency: chạy SAU MỖI LẦN render. Tương đương componentDidMount + componentDidUpdate." },
+
+{ topic:"ReactJS", q:"Cleanup function trong useEffect dùng để làm gì?",
+  opts:["Khởi tạo state ban đầu","Tránh memory leak – dọn dẹp timeout/subscription khi component unmount hoặc effect chạy lại","Cập nhật DOM trực tiếp","Gọi API"],
+  ans:1, explain:"return () => cleanup() trong useEffect: chạy khi component unmount hoặc trước khi effect chạy lại → tránh memory leak." },
+
+{ topic:"ReactJS", q:"React Fragment (<>...</>) dùng để làm gì?",
+  opts:["Tạo portal component","Nhóm nhiều element mà không thêm DOM node thừa","Lazy load component","Tạo context provider"],
+  ans:1, explain:"Fragment: nhóm nhiều element cùng cấp mà không thêm <div> thừa vào DOM. Cú pháp ngắn: <></>" },
+
+{ topic:"ReactJS", q:"Lifecycle method nào tương đương useEffect(fn, []) trong class component?",
+  opts:["componentWillMount","componentDidMount","componentDidUpdate","componentWillUnmount"],
+  ans:1, explain:"componentDidMount() chạy một lần sau khi component được mount – tương đương useEffect(fn, [])." },
+
+{ topic:"ReactJS", q:"React Hooks được giới thiệu từ phiên bản nào?",
+  opts:["React 15.0","React 16.3","React 16.8","React 17.0"],
+  ans:2, explain:"React Hooks ra mắt trong React 16.8 (tháng 2/2019), cho phép dùng state và lifecycle trong function component." },
+
+{ topic:"ReactJS", q:"useRef có thể dùng để làm gì? (chọn câu đúng nhất)",
+  opts:["Chỉ để truy cập DOM element","Giữ giá trị giữa các render không gây re-render, và truy cập DOM element trực tiếp","Thay thế cho useState","Tạo context"],
+  ans:1, explain:"useRef: (1) truy cập DOM element qua ref={myRef}, (2) lưu giá trị persistent giữa renders mà không trigger re-render." },
+
+{ topic:"ReactJS", q:"useContext giải quyết vấn đề gì?",
+  opts:["Tối ưu hiệu suất render","Tránh 'props drilling' – truyền props qua nhiều cấp bằng cách tạo state toàn cục","Gọi API bất đồng bộ","Quản lý routing"],
+  ans:1, explain:"useContext: đọc giá trị từ Context mà không cần truyền props qua từng cấp trung gian (prop drilling)." },
+
+{ topic:"ReactJS", q:"React.memo() dùng để làm gì?",
+  opts:["Memoize kết quả tính toán","Bọc component để tránh re-render khi props không thay đổi","Tạo memoized selector","Cache API response"],
+  ans:1, explain:"React.memo(Component): HOC ngăn re-render component nếu props không thay đổi so với lần render trước." },
+
+{ topic:"ReactJS", q:"useMemo dùng để làm gì?",
+  opts:["Memoize function","Memoize giá trị kết quả tính toán tốn kém – chỉ tính lại khi dependencies thay đổi","Tránh re-render component con","Tạo ref"],
+  ans:1, explain:"useMemo(fn, [deps]): tính toán và cache kết quả, chỉ tính lại khi deps thay đổi. Tránh tính toán nặng mỗi render." },
+
+{ topic:"ReactJS", q:"useCallback dùng để làm gì và khác useMemo như thế nào?",
+  opts:["useCallback memoize giá trị, useMemo memoize function","useCallback memoize FUNCTION, useMemo memoize GIÁ TRỊ","Hai hook hoàn toàn giống nhau","useCallback dùng cho class component"],
+  ans:1, explain:"useCallback(fn, deps): memoize function. useMemo(fn, deps): memoize giá trị trả về. useCallback(fn) ≡ useMemo(() => fn)." },
+
+{ topic:"ReactJS", q:"Trong React Router v6, component nào dùng để render nested route?",
+  opts:["<Switch />","<Nested />","<Outlet />","<ChildRoute />"],
+  ans:2, explain:"<Outlet /> là placeholder trong parent component, nơi React Router render nội dung của nested route hiện tại." },
+
+{ topic:"ReactJS", q:"useParams() trong React Router dùng để làm gì?",
+  opts:["Lấy query string (?key=value)","Lấy URL path parameters (:id trong /products/:id)","Lấy state từ navigation","Lấy tên route hiện tại"],
+  ans:1, explain:"useParams(): lấy dynamic segments trong URL path. Ví dụ: Route path=\"/products/:id\" → const { id } = useParams()." },
+
+{ topic:"ReactJS", q:"useSearchParams() trong React Router dùng để làm gì?",
+  opts:["Lấy path parameters","Lấy và set query string parameters (?key=value)","Lấy history của navigation","Kiểm tra route có tồn tại không"],
+  ans:1, explain:"useSearchParams(): đọc và ghi query string. Ví dụ: /search?kw=react → const [q] = useSearchParams(); q.get(\"kw\")." },
+
+{ topic:"ReactJS", q:"useNavigate() trong React Router v6 dùng để làm gì?",
+  opts:["Kiểm tra route hiện tại","Điều hướng programmatically đến route khác","Quay lại trang trước","Lấy danh sách routes"],
+  ans:1, explain:"useNavigate(): trả về hàm navigate để chuyển hướng: const nav = useNavigate(); nav(\"/home\")." },
+
+{ topic:"ReactJS", q:"NavLink khác Link như thế nào trong React Router?",
+  opts:["NavLink không reload trang, Link thì có","NavLink tự động thêm class 'active' khi route khớp, Link thì không","NavLink chỉ dùng cho mobile","Hoàn toàn giống nhau"],
+  ans:1, explain:"NavLink: giống Link nhưng tự thêm class 'active' khi URL khớp với to prop – tiện cho navigation menu." },
+
+{ topic:"ReactJS", q:"Khi cập nhật state là object với useState, cần lưu ý điều gì?",
+  opts:["Không thể update object trong useState","Phải dùng spread operator để preserve các field khác không thay đổi","Phải gọi setState trước khi render","Phải dùng useReducer thay thế"],
+  ans:1, explain:"setPerson(prev => ({...prev, year: 2022})): spread ...prev giữ các field cũ, chỉ override field year." },
+
+{ topic:"ReactJS", q:"Trong React, event handler onclick nên viết thế nào đúng chuẩn JSX?",
+  opts:["onclick={handleClick}","ONCLICK={handleClick}","onClick={handleClick}","OnClick={handleClick}"],
+  ans:2, explain:"JSX dùng camelCase cho event: onClick, onChange, onSubmit, onKeyDown... (không phải onclick như HTML thuần)." },
+
+{ topic:"ReactJS", q:"Để gọi API bất đồng bộ trong useEffect, cú pháp nào đúng?",
+  opts:["useEffect(async () => { await fetch(...) }, [])","useEffect(() => { const load = async () => { await fetch(...) }; load() }, [])","useEffect(() => fetch(...), [])","async useEffect(() => { }, [])"],
+  ans:1, explain:"useEffect callback không được là async trực tiếp. Cần khai báo async function bên trong rồi gọi ngay." },
+
+{ topic:"ReactJS", q:"Axios khác Fetch API như thế nào?",
+  opts:["Axios chỉ dùng GET, Fetch dùng được mọi method","Axios tự động parse JSON, xử lý lỗi tốt hơn, hỗ trợ interceptor","Fetch nhanh hơn Axios","Axios chỉ dùng cho Node.js"],
+  ans:1, explain:"Axios: tự parse JSON, có interceptors, cancel request, progress tracking. Fetch cần xử lý thêm nhiều bước hơn." },
+
+{ topic:"ReactJS", q:"FormData trong React dùng để làm gì?",
+  opts:["Validate form input","Gửi dữ liệu form kể cả file upload qua multipart/form-data","Lưu trạng thái form","Parse JSON từ form"],
+  ans:1, explain:"FormData: tạo payload dạng multipart/form-data để upload file qua API. form.append(\"avatar\", fileRef.current.files[0])." },
+
+{ topic:"ReactJS", q:"event.preventDefault() trong form submit dùng để làm gì?",
+  opts:["Xóa dữ liệu form","Ngăn hành vi mặc định (reload trang) khi submit form","Validate dữ liệu form","Submit form qua AJAX"],
+  ans:1, explain:"event.preventDefault(): ngăn browser reload trang khi submit form – cho phép xử lý submit bằng JavaScript." },
+
+{ topic:"ReactJS", q:"Để render danh sách trong React, mỗi item cần có prop gì?",
+  opts:["id","name","key","index"],
+  ans:2, explain:"Mỗi item trong list cần prop key duy nhất để React phân biệt khi reconcile Virtual DOM. Thường dùng id từ data." },
+
+{ topic:"ReactJS", q:"React Bootstrap cài đặt qua lệnh nào?",
+  opts:["yarn add react-bootstrap","npm install react-bootstrap bootstrap","npm install bootstrap-react","yarn add @bootstrap/react"],
+  ans:1, explain:"npm install react-bootstrap bootstrap@4.6.0 – cần cả gói react-bootstrap (components) và bootstrap (CSS)." },
+
+{ topic:"ReactJS", q:"Trong React Bootstrap, Grid System dùng components nào?",
+  opts:["<Grid>, <GridRow>, <GridCol>","<Container>, <Row>, <Col>","<Layout>, <Row>, <Column>","<Grid>, <Row>, <Cell>"],
+  ans:1, explain:"React Bootstrap Grid: <Container fluid><Row><Col xs={12} md={8}>...</Col></Row></Container>" },
+
+{ topic:"ReactJS", q:"Spread operator {...data} trong JSX props dùng để làm gì?",
+  opts:["Merge nhiều component thành một","Truyền tất cả properties của object data làm props","Copy component","Destructure component"],
+  ans:1, explain:"{...data} spread object thành individual props. Ví dụ: data={firstName:'A', lastName:'B'} → <Welcome {...data} /> = <Welcome firstName='A' lastName='B' />" },
+
+];
+
+// =====================================================================
+// APP STATE
+// =====================================================================
+let allTopics = [...new Set(QUESTIONS.map(q => q.topic))];
+let selectedTopics = new Set(allTopics);
+let quizQuestions = [];
+let current = 0;
+let answers = {}; // index → chosen option index (-1 = skip)
+let correct = 0, wrong = 0;
+
+// =====================================================================
+// SETUP
+// =====================================================================
+function initSetup() {
+  const grid = document.getElementById('topic-grid');
+  grid.innerHTML = '';
+  const counts = {};
+  QUESTIONS.forEach(q => { counts[q.topic] = (counts[q.topic]||0)+1; });
+  allTopics.forEach(t => {
+    const btn = document.createElement('div');
+    btn.className = 'topic-btn selected';
+    btn.dataset.topic = t;
+    btn.innerHTML = `<div class="t-name">${t}</div><div class="t-count">${counts[t]} câu</div>`;
+    btn.onclick = () => toggleTopic(btn, t);
+    grid.appendChild(btn);
+  });
+  updateCountLabel();
+}
+
+function toggleTopic(btn, topic) {
+  if (selectedTopics.has(topic)) {
+    if (selectedTopics.size === 1) return; // at least 1
+    selectedTopics.delete(topic);
+    btn.classList.remove('selected');
+  } else {
+    selectedTopics.add(topic);
+    btn.classList.add('selected');
+  }
+  updateMaxRange();
+}
+
+function updateMaxRange() {
+  updateCountLabel();
+}
+
+function updateCountLabel() {
+  const pool = QUESTIONS.filter(q => selectedTopics.has(q.topic));
+  const range = document.getElementById('q-count-range');
+  const count = parseInt(range.value);
+  const repeats = count > pool.length ? Math.ceil(count / pool.length) : 1;
+  const repeatNote = repeats > 1 ? ` <span style="color:var(--warning);font-size:.8rem">(lặp ~${repeats}x)</span>` : '';
+  document.getElementById('sel-count-label').innerHTML = count + repeatNote;
+}
+
+function startQuiz() {
+  const count = parseInt(document.getElementById('q-count-range').value);
+  const order = document.getElementById('q-order').value;
+  let pool = QUESTIONS.filter(q => selectedTopics.has(q.topic));
+
+  // Build question list – repeat pool if count exceeds pool size
+  let result = [];
+  while (result.length < count) {
+    const batch = order === 'random' ? shuffle(pool) : [...pool];
+    result = result.concat(batch);
+  }
+  // Clone each question object so shuffle state is independent per slot
+  quizQuestions = result.slice(0, count).map(q => ({ ...q, _shuffled: false }));
+
+  answers = {};
+  correct = 0; wrong = 0;
+  current = 0;
+  document.getElementById('setup-screen').style.display = 'none';
+  document.getElementById('quiz-screen').style.display = 'block';
+  renderQuestion();
+}
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+// =====================================================================
+// QUIZ RENDER
+// =====================================================================
+function renderQuestion() {
+  const q = quizQuestions[current];
+  const total = quizQuestions.length;
+  const answered = Object.keys(answers).length;
+
+  // Progress
+  document.getElementById('prog-fill').style.width = ((current+1)/total*100)+'%';
+  document.getElementById('prog-text').textContent = `Câu ${current+1} / ${total}`;
+  document.getElementById('score-live').innerHTML = `✅ ${correct} &nbsp; ❌ ${wrong}`;
+
+  // Nav buttons
+  document.getElementById('btn-prev').disabled = current === 0;
+  const isLast = current === total - 1;
+  document.getElementById('btn-next').classList.toggle('hidden', isLast);
+  document.getElementById('btn-finish').classList.toggle('hidden', !isLast);
+
+  // Shuffle options for display
+  let optIndices = q.opts.map((_, i) => i);
+  if (!q._shuffled) {
+    q._shuffleMap = shuffle(optIndices); // display order → original index
+    q._shuffled = true;
+  }
+
+  const already = answers[current];
+  const answered_q = already !== undefined;
+
+  let html = `<div class="q-card">
+    <div class="q-badge">📚 ${q.topic}</div>
+    <div class="q-text">${q.q}</div>
+    <div class="options">`;
+
+  const letters = ['A','B','C','D'];
+  q._shuffleMap.forEach((origIdx, displayIdx) => {
+    const letter = letters[displayIdx];
+    const isCorrect = origIdx === q.ans;
+    let cls = 'opt';
+    if (answered_q) {
+      cls += ' disabled';
+      if (origIdx === already) cls += (isCorrect ? ' correct' : ' wrong');
+      else if (isCorrect) cls += ' correct';
+    }
+    const optText = q.opts[origIdx].replace(/`([^`]+)`/g, '<code>$1</code>');
+    html += `<div class="${cls}" onclick="selectOpt(${origIdx})">
+      <div class="opt-letter">${letter}</div>
+      <div class="opt-text">${optText}</div>
+    </div>`;
+  });
+
+  html += `</div>`;
+
+  // Feedback
+  if (answered_q) {
+    const isCorrect = already === q.ans;
+    html += `<div class="feedback ${isCorrect ? 'correct-fb' : 'wrong-fb'}" style="display:block">
+      ${isCorrect ? '✅ Chính xác!' : '❌ Sai rồi!'} ${q.explain}
+    </div>`;
+  }
+
+  html += `</div>`;
+  document.getElementById('q-container').innerHTML = html;
+}
+
+function selectOpt(origIdx) {
+  if (answers[current] !== undefined) return; // already answered
+  const q = quizQuestions[current];
+  answers[current] = origIdx;
+  if (origIdx === q.ans) correct++;
+  else wrong++;
+  renderQuestion();
+}
+
+function nextQ() {
+  if (answers[current] === undefined) answers[current] = -1; // skip
+  if (current < quizQuestions.length - 1) { current++; renderQuestion(); }
+}
+
+function prevQ() {
+  if (current > 0) { current--; renderQuestion(); }
+}
+
+function finishQuiz() {
+  // mark unanswered as skip
+  for (let i = 0; i < quizQuestions.length; i++) {
+    if (answers[i] === undefined) answers[i] = -1;
+  }
+  showResult();
+}
+
+// =====================================================================
+// RESULT
+// =====================================================================
+function showResult() {
+  document.getElementById('quiz-screen').style.display = 'none';
+  document.getElementById('review-screen').style.display = 'none';
+  document.getElementById('result-screen').style.display = 'block';
+
+  const total = quizQuestions.length;
+  let c = 0, w = 0;
+  quizQuestions.forEach((q,i) => {
+    if (answers[i] === q.ans) c++;
+    else if (answers[i] !== -1) w++;
+  });
+  correct = c; wrong = w;
+  const pct = Math.round(c/total*100);
+
+  document.getElementById('r-correct').textContent = c;
+  document.getElementById('r-wrong').textContent = w;
+  document.getElementById('r-total').textContent = total;
+  document.getElementById('score-pct').textContent = pct + '%';
+
+  const circle = document.getElementById('score-circle');
+  const color = pct >= 80 ? 'var(--success)' : pct >= 50 ? 'var(--warning)' : 'var(--danger)';
+  circle.style.borderColor = color;
+  circle.querySelector('.score-num').style.color = color;
+
+  // Per-topic breakdown
+  const topicStats = {};
+  quizQuestions.forEach((q,i) => {
+    if (!topicStats[q.topic]) topicStats[q.topic] = {total:0, correct:0};
+    topicStats[q.topic].total++;
+    if (answers[i] === q.ans) topicStats[q.topic].correct++;
+  });
+
+  let html = '';
+  Object.entries(topicStats).forEach(([topic, s]) => {
+    const p = Math.round(s.correct/s.total*100);
+    const barColor = p >= 80 ? '#16a34a' : p >= 50 ? '#d97706' : '#dc2626';
+    html += `<div class="tb-row">
+      <div class="tb-name">${topic}</div>
+      <div class="tb-bar-wrap"><div class="tb-bar" style="width:${p}%;background:${barColor}"></div></div>
+      <div class="tb-score">${s.correct}/${s.total}</div>
+    </div>`;
+  });
+  document.getElementById('topic-breakdown-list').innerHTML = html;
+}
+
+// =====================================================================
+// REVIEW
+// =====================================================================
+function showReview() {
+  document.getElementById('result-screen').style.display = 'none';
+  document.getElementById('review-screen').style.display = 'block';
+
+  let html = '';
+  quizQuestions.forEach((q, i) => {
+    const userAns = answers[i];
+    const isSkip = userAns === -1;
+    const isCorrect = userAns === q.ans;
+    let tagClass = isSkip ? 'tag-skip' : isCorrect ? 'tag-correct' : 'tag-wrong';
+    let tagText = isSkip ? '⏭ Bỏ qua' : isCorrect ? '✅ Đúng' : '❌ Sai';
+
+    const letters = ['A','B','C','D'];
+    let optsHtml = '';
+    q._shuffleMap.forEach((origIdx, displayIdx) => {
+      const letter = letters[displayIdx];
+      const isAns = origIdx === q.ans;
+      const isUser = origIdx === userAns;
+      let style = 'background:var(--card2);border:2px solid var(--border);';
+      if (isAns) style = 'background:#052e16;border:2px solid var(--success);';
+      if (isUser && !isAns) style = 'background:#2d0a0a;border:2px solid var(--danger);';
+      optsHtml += `<div style="${style}border-radius:8px;padding:8px 12px;margin-bottom:6px;font-size:.88rem;display:flex;gap:8px;align-items:flex-start">
+        <span style="font-weight:700;min-width:20px;color:var(--muted)">${letter}.</span>
+        <span>${q.opts[origIdx]}</span>
+        ${isAns ? '<span style="color:var(--success);margin-left:auto">✓ Đáp án</span>' : ''}
+        ${isUser && !isAns ? '<span style="color:var(--danger);margin-left:auto">✗ Bạn chọn</span>' : ''}
+      </div>`;
+    });
+
+    html += `<div class="review-q">
+      <div class="status-tag ${tagClass}">${tagText}</div>
+      <div style="font-size:.75rem;color:var(--muted);margin-bottom:8px">Câu ${i+1} · ${q.topic}</div>
+      <div style="font-size:.95rem;margin-bottom:12px;line-height:1.6">${q.q}</div>
+      ${optsHtml}
+      <div style="margin-top:10px;padding:10px 14px;background:#0f172a;border-radius:6px;font-size:.85rem;color:var(--primary-light)">
+        💡 ${q.explain}
+      </div>
+    </div>`;
+  });
+  document.getElementById('review-list').innerHTML = html;
+}
+
+function restartQuiz() {
+  startQuiz();
+}
+
+function goSetup() {
+  document.getElementById('result-screen').style.display = 'none';
+  document.getElementById('setup-screen').style.display = 'block';
+}
+
+// =====================================================================
+// INIT
+// =====================================================================
+initSetup();
+</script>
+</body>
+</html>
