@@ -142,7 +142,7 @@
 
     <div class="row">
       <label>Số câu hỏi:</label>
-      <input type="range" id="q-count-range" min="10" max="200" step="5" value="200" oninput="updateCountLabel()" />
+      <input type="range" id="q-count-range" min="10" max="300" step="5" value="300" oninput="updateCountLabel()" />
       <span id="sel-count-label">120</span> câu
     </div>
     <div class="row">
@@ -999,7 +999,464 @@ const QUESTIONS = [
   opts:["<Route path='/admin'><Route path='stats' /></Route>","<Route path='/admin' element={<Admin />}><Route path='stats' element={<Stats />} /></Route> với <Outlet/> trong Admin","<NestedRoute parent='/admin' child='stats' />","<Route path='/admin/stats' />"],
   ans:1, explain:"Nested route: Route con đặt bên trong Route cha. Component cha cần có <Outlet /> làm placeholder render nội dung route con." },
 
+// =====================================================================
+// PHẦN MỞ RỘNG – ĐÀO SÂU 9 CHỦ ĐỀ
+// =====================================================================
+
+// ── Java Nâng Cao – Nâng Cao ──────────────────────────────────────
+{ topic:"Java Nâng Cao", q:"Điểm khác nhau cốt lõi giữa Heap và Stack về vòng đời của dữ liệu?",
+  opts:["Heap nhanh hơn Stack","Stack tự giải phóng khi method kết thúc (LIFO), Heap do GC thu hồi khi hết reference","Heap chỉ lưu primitives, Stack lưu objects","Stack không giới hạn kích thước"],
+  ans:1, explain:"Stack: frame của method bị pop ngay khi method return → biến cục bộ tự mất. Heap: object tồn tại đến khi GC xác định không còn reference nào trỏ đến." },
+
+{ topic:"Java Nâng Cao", q:"Lý do phổ biến nhất gây StackOverFlowError là gì?",
+  opts:["Tạo quá nhiều object trên Heap","Đệ quy vô tận – mỗi lần gọi method tạo frame mới trên Stack cho đến khi hết bộ nhớ","Dùng quá nhiều biến static","Khai báo mảng quá lớn"],
+  ans:1, explain:"Đệ quy không có base case (điều kiện dừng) → Stack liên tục nhận frame mới → StackOverFlowError." },
+
+{ topic:"Java Nâng Cao", q:"Sau dòng lệnh 'sv = null;', điều gì xảy ra với object SinhVien cũ?",
+  opts:["Object bị xóa ngay lập tức","Object không thay đổi gì","Object trở nên không thể truy cập (unreachable) và đủ điều kiện để GC thu hồi","Object chuyển từ Heap sang Stack"],
+  ans:2, explain:"Gán null: reference sv không còn trỏ đến object cũ nữa → object cũ trở thành unreachable → GC có thể thu hồi bộ nhớ." },
+
+{ topic:"Java Nâng Cao", q:"Native Method Stack trong JVM khác Stack Area ở chỗ nào?",
+  opts:["Native Method Stack lớn hơn Stack Area","Native Method Stack chứa các system/native function (viết bằng C/C++), Stack Area chứa Java method frames","Native Method Stack dùng chung cho mọi thread","Native Method Stack không tồn tại trong JVM hiện đại"],
+  ans:1, explain:"Native Method Stack: lưu thông tin các native method (C/C++ system calls). Mỗi thread có riêng. Stack Area: lưu Java method frames." },
+
+{ topic:"Java Nâng Cao", q:"Tại sao nên dùng 'implement Runnable' thay vì 'extend Thread' khi tạo thread?",
+  opts:["Runnable chạy nhanh hơn Thread","Java không cho phép extend Thread","Vì Java chỉ hỗ trợ đơn kế thừa – implement Runnable để class còn có thể extend class khác","Runnable tự động quản lý thread pool"],
+  ans:2, explain:"Java single inheritance: nếu extend Thread thì class không thể extend class khác. Implement Runnable linh hoạt hơn và phân tách task khỏi thread." },
+
+{ topic:"Java Nâng Cao", q:"Gọi thread.run() thay vì thread.start() sẽ có kết quả gì?",
+  opts:["Tạo thread mới và chạy run()","run() chạy trực tiếp trong thread hiện tại (main thread), KHÔNG tạo thread mới","Ném IllegalThreadStateException","Không có gì xảy ra"],
+  ans:1, explain:"Gọi run() trực tiếp: chỉ là gọi method thông thường trong thread hiện tại. PHẢI gọi start() để JVM tạo thread mới và gọi run() trong thread đó." },
+
+{ topic:"Java Nâng Cao", q:"Thread.yield() có tác dụng gì?",
+  opts:["Dừng hẳn thread","Gợi ý scheduler nhường CPU cho thread khác cùng priority, nhưng không đảm bảo","Tăng priority của thread hiện tại","Đợi thread khác hoàn thành"],
+  ans:1, explain:"yield(): chỉ là gợi ý – JVM scheduler có thể bỏ qua. Khác join() (blocking) và sleep() (dừng có thời gian)." },
+
+{ topic:"Java Nâng Cao", q:"Executors.newCachedThreadPool() khác newFixedThreadPool(n) như thế nào?",
+  opts:["newCachedThreadPool giới hạn số thread, newFixedThreadPool không giới hạn","newCachedThreadPool tạo thread mới khi cần (không giới hạn), tái dùng idle threads; newFixedThreadPool giữ đúng n thread","Hoàn toàn giống nhau","newCachedThreadPool chậm hơn"],
+  ans:1, explain:"CachedThreadPool: tạo thread mới nếu không có thread idle, tái sử dụng thread sau 60s idle. FixedThreadPool: luôn giữ đúng n thread." },
+
+{ topic:"Java Nâng Cao", q:"synchronized trên static method dùng lock nào?",
+  opts:["Lock của object gọi method","Lock của class (Class object)","Không có lock","Lock của thread hiện tại"],
+  ans:1, explain:"synchronized static method: lock là Class object (MyClass.class) – khác với instance method dùng lock của this (instance)." },
+
+{ topic:"Java Nâng Cao", q:"Collections.sort(list) sắp xếp theo thứ tự nào?",
+  opts:["Ngẫu nhiên","Giảm dần","Tăng dần (natural order)","Theo thứ tự chèn vào"],
+  ans:2, explain:"Collections.sort(list): sắp xếp tăng dần. Dùng Collections.sort(list, Collections.reverseOrder()) để giảm dần." },
+
+{ topic:"Java Nâng Cao", q:"ArrayList.trimToSize() dùng để làm gì?",
+  opts:["Xóa toàn bộ phần tử","Sắp xếp phần tử","Thu nhỏ capacity của ArrayList về bằng đúng size hiện tại – tiết kiệm bộ nhớ","Tăng capacity lên gấp đôi"],
+  ans:2, explain:"ArrayList giữ array nội bộ có thể lớn hơn số phần tử thực. trimToSize() thu nhỏ array về đúng size → giải phóng bộ nhớ thừa." },
+
+{ topic:"Java Nâng Cao", q:"Điểm khác nhau giữa HashSet, LinkedHashSet và TreeSet về việc sắp xếp?",
+  opts:["Ba loại đều không đảm bảo thứ tự","HashSet: không đảm bảo thứ tự; LinkedHashSet: giữ thứ tự chèn; TreeSet: tự sắp xếp theo natural order","TreeSet không hỗ trợ null","LinkedHashSet nhanh nhất"],
+  ans:1, explain:"HashSet: thứ tự random. LinkedHashSet: insertion order. TreeSet: sorted order (natural/Comparator). Chọn theo nhu cầu sắp xếp." },
+
+{ topic:"Java Nâng Cao", q:"Map.keySet(), Map.values(), Map.entrySet() trả về gì?",
+  opts:["Đều trả về List","keySet() → Set các key; values() → Collection các value; entrySet() → Set<Map.Entry> các cặp key-value","Đều trả về Set","keySet() → List, values() → Set, entrySet() → Map"],
+  ans:1, explain:"keySet(): Set<K> các key. values(): Collection<V> các value. entrySet(): Set<Map.Entry<K,V>> để duyệt qua cả key và value." },
+
+{ topic:"Java Nâng Cao", q:"Lambda expression có thể dùng ở đâu trong Java?",
+  opts:["Ở bất kỳ đâu","Chỉ trong main method","Ở bất kỳ chỗ nào cần Functional Interface (interface với đúng 1 abstract method)","Chỉ với Collection"],
+  ans:2, explain:"Lambda implement Functional Interface (SAM). Dùng ở mọi chỗ có Functional Interface: Runnable, Comparator, Predicate, Consumer, Function..." },
+
+{ topic:"Java Nâng Cao", q:"IntStream.of(values).distinct() làm gì?",
+  opts:["Xóa phần tử đầu tiên","Lọc chỉ giữ lại các giá trị UNIQUE (loại bỏ trùng lặp)","Sắp xếp stream","Đếm số phần tử"],
+  ans:1, explain:"distinct(): intermediate operation – trả về stream chỉ chứa phần tử không trùng nhau (dùng equals() để so sánh)." },
+
+{ topic:"Java Nâng Cao", q:"IntStream.of(values).limit(3) làm gì?",
+  opts:["Lấy phần tử từ index 3","Chỉ xử lý tối đa 3 phần tử đầu tiên của stream","Lấy 3 phần tử cuối","Bỏ qua 3 phần tử đầu"],
+  ans:1, explain:"limit(n): intermediate operation – cắt stream chỉ giữ n phần tử đầu tiên. Kết hợp với sorted() hay filter() rất hữu ích." },
+
+{ topic:"Java Nâng Cao", q:"Đâu là sự khác nhau giữa terminal và intermediate operations trong Stream?",
+  opts:["Không có sự khác nhau","Intermediate trả về Stream (có thể chain tiếp), Terminal trả về kết quả cuối cùng (kết thúc pipeline)","Terminal nhanh hơn Intermediate","Intermediate thực thi ngay, Terminal thực thi lazy"],
+  ans:1, explain:"Intermediate (filter,map,sorted,limit,distinct): trả về Stream → lazy, chưa thực thi. Terminal (forEach,count,min,max,reduce): trigger toàn bộ pipeline, trả về kết quả." },
+
+{ topic:"Java Nâng Cao", q:"stream.map(v -> v * 2) làm gì?",
+  opts:["Lọc các phần tử chẵn","Chuyển đổi mỗi phần tử theo hàm cho trước – nhân đôi từng phần tử","Sắp xếp stream","Tính tổng nhân đôi"],
+  ans:1, explain:"map(): intermediate – áp dụng hàm biến đổi lên mỗi phần tử và trả về stream mới. Ví dụ: map(v -> v*2) nhân đôi mỗi phần tử." },
+
+// ── JDBC – Nâng Cao ───────────────────────────────────────────────
+{ topic:"JDBC", q:"PreparedStatement có lợi thế gì về hiệu suất so với Statement?",
+  opts:["PreparedStatement không có lợi thế gì","PreparedStatement được compile và lưu cache lần đầu, các lần gọi sau chỉ thực thi – tránh parse lại SQL","Statement luôn nhanh hơn","PreparedStatement dùng batch tốt hơn"],
+  ans:1, explain:"PreparedStatement: SQL được pre-compiled và cached trên server. Đặc biệt hiệu quả khi cùng query chạy nhiều lần với các tham số khác nhau." },
+
+{ topic:"JDBC", q:"Tại sao Statement dễ bị tấn công SQL Injection nhưng PreparedStatement thì không?",
+  opts:["Statement không hỗ trợ WHERE clause","PreparedStatement escape tất cả tham số đặc biệt – user input không thể thay đổi cấu trúc SQL","Statement không hỗ trợ string","PreparedStatement dùng HTTPS"],
+  ans:1, explain:"Statement ghép chuỗi trực tiếp: nếu user nhập 'OR 1=1-- sẽ break query. PreparedStatement: ? là placeholder, tham số được escape an toàn." },
+
+{ topic:"JDBC", q:"execute() trong Statement trả về kiểu gì và dùng khi nào?",
+  opts:["Trả về int – chỉ cho SELECT","Trả về boolean – true nếu kết quả là ResultSet (SELECT), false nếu là update count","Trả về void","Trả về ResultSet – chỉ cho SELECT"],
+  ans:1, explain:"execute(): trả về boolean. true → kết quả là ResultSet (dùng getResultSet()). false → là update count (dùng getUpdateCount()). Dùng khi không biết trước loại query." },
+
+{ topic:"JDBC", q:"clearBatch() trong Batch Processing làm gì?",
+  opts:["Thực thi batch","Commit transaction","Xóa tất cả các câu lệnh đã được addBatch() nhưng chưa thực thi","Rollback batch"],
+  ans:2, explain:"clearBatch(): loại bỏ toàn bộ câu lệnh đã thêm vào batch. Dùng để reset batch mà không thực thi." },
+
+{ topic:"JDBC", q:"Phải gọi phương thức nào để kiểm tra database có hỗ trợ batch không?",
+  opts:["conn.supportsBatch()","conn.getMetaData().supportsBatchUpdates()","stm.isBatchSupported()","DatabaseConfig.batchEnabled()"],
+  ans:1, explain:"DatabaseMetaData meta = conn.getMetaData(); meta.supportsBatchUpdates() → trả về boolean. Nên kiểm tra trước khi dùng batch." },
+
+{ topic:"JDBC", q:"ResultSet.relative(-2) làm gì?",
+  opts:["Di chuyển đến hàng thứ -2 (không hợp lệ)","Di chuyển con trỏ LÙI 2 hàng từ vị trí hiện tại","Di chuyển đến hàng thứ 2 tính từ cuối","Di chuyển con trỏ tiến 2 hàng"],
+  ans:1, explain:"relative(n): n>0 tiến, n<0 lùi. relative(-2) lùi 2 hàng từ vị trí hiện tại. Cần ResultSet.TYPE_SCROLL_INSENSITIVE hoặc SENSITIVE." },
+
+{ topic:"JDBC", q:"Điều gì xảy ra nếu gọi conn.commit() khi AutoCommit đang bật (true)?",
+  opts:["Commit bình thường","Ném SQLException vì AutoCommit đang bật","Tắt AutoCommit","Không có tác dụng gì hoặc ném exception tùy driver"],
+  ans:3, explain:"Khi AutoCommit=true, mỗi statement tự commit ngay. Gọi commit() thủ công có thể ném SQLException hoặc không có tác dụng tùy driver. Thực tế: phải setAutoCommit(false) trước." },
+
+{ topic:"JDBC", q:"Tham số IN và OUT trong Stored Procedure khác nhau thế nào?",
+  opts:["Hoàn toàn giống nhau","IN: truyền giá trị vào procedure, OUT: nhận giá trị trả về từ procedure","OUT thay thế return value","IN chỉ dùng cho SELECT"],
+  ans:1, explain:"IN: tham số đầu vào (setXxx()). OUT: tham số đầu ra (registerOutParameter() + getXxx() sau execute()). INOUT: vừa vào vừa ra." },
+
+{ topic:"JDBC", q:"Khi nào nên dùng Batch Processing thay vì thực thi từng lệnh SQL riêng lẻ?",
+  opts:["Khi chỉ có 1 câu SQL","Khi cần INSERT/UPDATE nhiều record cùng lúc – giảm network round-trips","Khi cần SELECT dữ liệu","Khi cần rollback"],
+  ans:1, explain:"Batch: gom nhiều SQL → 1 lần gửi lên DB server. Ví dụ: insert 1000 records → thay vì 1000 round-trips chỉ cần 1. Tăng hiệu suất đáng kể." },
+
+{ topic:"JDBC", q:"conn.close() có tác dụng gì nếu không gọi?",
+  opts:["Không ảnh hưởng gì","Connection bị leak – chiếm tài nguyên server database cho đến khi JVM tắt hoặc timeout","Connection tự đóng sau 10 giây","GC tự đóng connection"],
+  ans:1, explain:"Connection là tài nguyên quý của DB server. Không đóng → connection leak, cạn kiệt connection pool. Phải gọi close() trong finally hoặc dùng try-with-resources." },
+
+{ topic:"JDBC", q:"MySQL Stored Procedure: từ khóa nào dùng để trả giá trị qua tham số OUT?",
+  opts:["RETURN","SET ... INTO","SELECT ... INTO","OUTPUT"],
+  ans:2, explain:"Trong MySQL stored procedure, dùng 'SELECT COUNT(*) INTO c FROM ...' để gán giá trị vào tham số OUT 'c'." },
+
+// ── Hibernate – Nâng Cao ─────────────────────────────────────────
+{ topic:"Hibernate", q:"Trạng thái 'detached' trong Hibernate xảy ra khi nào?",
+  opts:["Khi object vừa được new","Khi object đã từng persistent nhưng Session đã bị đóng hoặc gọi evict()","Khi object bị remove() khỏi DB","Khi object chưa có @Entity"],
+  ans:1, explain:"Detached: object đã từng được quản lý bởi Session (persistent), nhưng Session đó đã close hoặc gọi session.evict(obj). Thay đổi không được tracking." },
+
+{ topic:"Hibernate", q:"Phương thức nào chuyển object từ detached về persistent để merge thay đổi?",
+  opts:["session.attach()","session.persist()","session.merge()","session.refresh()"],
+  ans:2, explain:"session.merge(obj): lấy hoặc load entity từ DB, áp dụng state từ detached object lên, trả về persistent object. Không cần biết Session trước đó." },
+
+{ topic:"Hibernate", q:"Sự khác biệt giữa @Id + @GeneratedValue(IDENTITY) và @Id + @GeneratedValue(UUID)?",
+  opts:["Hoàn toàn giống nhau","IDENTITY: database tự tăng số nguyên (AUTO_INCREMENT); UUID: Hibernate sinh chuỗi UUID ngẫu nhiên","UUID nhanh hơn IDENTITY","IDENTITY dùng cho String, UUID dùng cho int"],
+  ans:1, explain:"IDENTITY: DB tự tăng (1,2,3...) → dùng cho int/long PK. UUID: Hibernate sinh chuỗi 36 ký tự → dùng cho String PK, không đoán được, phân tán tốt." },
+
+{ topic:"Hibernate", q:"Trong @ManyToMany, bên nào là 'owning side' và bên nào là 'inverse side'?",
+  opts:["Không có owning/inverse","Bên có @JoinTable là owning side; bên có mappedBy là inverse (không owning)","Bên có @ManyToMany đầu tiên là owning","Cả hai đều là owning"],
+  ans:1, explain:"Owning side (có @JoinTable): Hibernate dùng để sync vào bảng trung gian. Inverse side (có mappedBy): chỉ đọc, không tự sync. Quan trọng khi cập nhật quan hệ." },
+
+{ topic:"Hibernate", q:"Tại sao @OneToMany mặc định là LAZY và đây có phải thực hành tốt không?",
+  opts:["LAZY là mặc định vì bug của Hibernate","LAZY là tốt vì tránh load N+1 objects khi không cần dùng, chỉ query khi thực sự truy cập collection","EAGER tốt hơn trong mọi trường hợp","LAZY và EAGER giống nhau về hiệu suất"],
+  ans:1, explain:"LAZY (mặc định @OneToMany): chỉ load collection khi code truy cập property đó. Tránh N+1 query vô ý. EAGER sẽ load tất cả ngay dù không cần." },
+
+{ topic:"Hibernate", q:"HQL 'FROM Category C WHERE C.name LIKE :kw' – tham số :kw được set như thế nào?",
+  opts:["query.setString(\"kw\", value)","query.setParameter(\"kw\", value)","query.addParam(\":kw\", value)","query.bind(\"kw\", value)"],
+  ans:1, explain:"query.setParameter(\"kw\", \"%may%\"): set named parameter không có dấu : trong tên. Hibernate hỗ trợ cả named (:name) và positional (?1) params." },
+
+{ topic:"Hibernate", q:"Trong HQL, tên class và tên property phân biệt HOA/thường không?",
+  opts:["Không phân biệt","CÓ phân biệt (case-sensitive) – phải dùng đúng tên Java class và property","Chỉ tên class phân biệt","Chỉ tên property phân biệt"],
+  ans:1, explain:"HQL case-sensitive với tên class (Category, không phải category) và property (name, không phải Name). SQL keyword (FROM, WHERE) thì không phân biệt." },
+
+{ topic:"Hibernate", q:"Criteria API: query.where(builder.and(p1, p2)) nghĩa là gì?",
+  opts:["Lấy record thỏa p1 HOẶC p2","Lấy record thỏa CẢ HAI điều kiện p1 VÀ p2","Loại bỏ record thỏa p1 và p2","Đặt priority cho p1 trước p2"],
+  ans:1, explain:"builder.and(p1, p2): SQL WHERE p1 AND p2 – cả 2 điều kiện phải thỏa. builder.or(p1,p2): WHERE p1 OR p2 – thỏa 1 trong 2." },
+
+{ topic:"Hibernate", q:"LocalSessionFactoryBean.setPackagesToScan() dùng để làm gì?",
+  opts:["Scan XML config files","Tự động phát hiện tất cả @Entity classes trong package được chỉ định","Cấu hình connection pool","Set dialect cho database"],
+  ans:1, explain:"setPackagesToScan(\"com.dht.pojo\"): Hibernate tự scan và đăng ký tất cả class có @Entity trong package đó – không cần addAnnotatedClass() từng cái." },
+
+{ topic:"Hibernate", q:"hibernate.showSql=true trong file cấu hình có tác dụng gì?",
+  opts:["Bật chế độ debug toàn bộ","In ra console câu SQL thực tế mà Hibernate tạo ra và thực thi","Validate schema khi startup","Bật transaction logging"],
+  ans:1, explain:"showSql=true: in ra từng SQL query Hibernate sinh ra. Rất hữu ích để debug, xem Hibernate đang thực thi gì và kiểm tra hiệu suất." },
+
+{ topic:"Hibernate", q:"getResultList() và getSingleResult() khác nhau khi nào?",
+  opts:["Hoàn toàn giống nhau","getResultList() trả về List (rỗng nếu không có kết quả); getSingleResult() trả về 1 object, ném exception nếu 0 hoặc nhiều hơn 1 kết quả","getSingleResult() luôn nhanh hơn","getResultList() chỉ dùng cho HQL"],
+  ans:1, explain:"getSingleResult(): ném NoResultException nếu không tìm thấy, NonUniqueResultException nếu nhiều kết quả. getResultList(): an toàn hơn, trả về List rỗng khi không có kết quả." },
+
+{ topic:"Hibernate", q:"Trong Hibernate, cascade có nghĩa là gì?",
+  opts:["Sắp xếp dữ liệu theo tầng","Lan truyền operation (persist, merge, remove) từ entity cha xuống entity con liên quan","Cấu hình foreign key","Tự động tạo bảng"],
+  ans:1, explain:"cascade=CascadeType.ALL: khi persist/merge/remove entity cha, Hibernate tự động áp dụng cùng operation cho các entity con liên quan." },
+
+// ── Spring Framework – Nâng Cao ──────────────────────────────────
+{ topic:"Spring Framework", q:"Tại sao Spring gọi là 'Non-intrusive'?",
+  opts:["Spring nhỏ về kích thước file","POJO trong Spring không cần extend/implement Spring-specific class – code thuần Java","Spring không dùng annotation","Spring không cần config"],
+  ans:1, explain:"Non-intrusive: class của bạn không cần extends SpringClass hay implements SpringInterface → không phụ thuộc Spring → dễ test và tái sử dụng." },
+
+{ topic:"Spring Framework", q:"Singleton scope trong Spring tạo 1 instance trên phạm vi nào?",
+  opts:["Trên toàn bộ JVM","Trên mỗi ApplicationContext (IoC Container) – không phải singleton theo nghĩa design pattern","Trên mỗi thread","Trên mỗi request HTTP"],
+  ans:1, explain:"Singleton trong Spring: 1 instance PER ApplicationContext, không phải per JVM. Nếu có 2 ApplicationContext, có 2 singleton instances của cùng bean." },
+
+{ topic:"Spring Framework", q:"<constructor-arg value=\"CNTT\" /> trong XML config dùng để làm gì?",
+  opts:["Đặt tên cho constructor","Truyền giá trị 'CNTT' vào constructor của bean khi khởi tạo (Constructor Injection)","Tạo property có tên CNTT","Cấu hình scope của bean"],
+  ans:1, explain:"Constructor Injection qua XML: <constructor-arg value=\"...\"> truyền giá trị literal, <constructor-arg ref=\"beanId\"> truyền reference đến bean khác." },
+
+{ topic:"Spring Framework", q:"<property name=\"khoa\" ref=\"k\" /> trong XML Spring config nghĩa là gì?",
+  opts:["Tạo property static","Inject bean có id='k' vào property 'khoa' của bean hiện tại (Setter Injection)","Khai báo biến type Khoa","Đặt tên alias cho bean k"],
+  ans:1, explain:"Setter Injection: Spring gọi setKhoa(k_bean). ref=\"k\" tham chiếu đến bean có id=\"k\" trong context. value=\"...\" cho giá trị literal." },
+
+{ topic:"Spring Framework", q:"SpEL (Spring Expression Language) dùng để làm gì?",
+  opts:["Định nghĩa SQL query","Query và manipulate object graph tại runtime trong Spring config","Viết CSS cho Spring MVC","Cấu hình database connection"],
+  ans:1, explain:"SpEL: biểu thức mạnh dùng trong annotation/XML config, ví dụ: @Value(\"#{systemProperties['java.version']}\") để đọc property runtime." },
+
+{ topic:"Spring Framework", q:"@Autowired đặt trên field, setter, hay constructor – cách nào được recommend nhất?",
+  opts:["Field injection là tốt nhất","Setter injection là tốt nhất","Constructor injection được recommend – đảm bảo dependency không null và class immutable","Ba cách như nhau"],
+  ans:2, explain:"Constructor injection: dependency bắt buộc phải có khi tạo object → không thể null, class dễ test (mock qua constructor), field không cần setter." },
+
+{ topic:"Spring Framework", q:"Autowire mode 'byName' tìm bean để inject như thế nào?",
+  opts:["Theo kiểu dữ liệu của field","Theo tên của property/setter – tìm bean có id khớp với tên property","Theo thứ tự khai báo","Theo annotation @Named"],
+  ans:1, explain:"byName: property tên 'khoa' → tìm bean id='khoa'. Nếu không tìm thấy bean có id đó → property không được inject (null)." },
+
+{ topic:"Spring Framework", q:"FileSystemXmlApplicationContext khác ClassPathXmlApplicationContext ở điểm nào?",
+  opts:["Hoàn toàn giống nhau","FileSystem: đường dẫn tuyệt đối (C:/config/beans.xml); ClassPath: đường dẫn trong classpath (src/main/resources/beans.xml)","FileSystem nhanh hơn","ClassPath chỉ dùng trong test"],
+  ans:1, explain:"ClassPath: relative to classpath (\"beans.xml\" = src/main/resources/beans.xml). FileSystem: đường dẫn OS tuyệt đối (\"C:/app/beans.xml\")." },
+
+{ topic:"Spring Framework", q:"<list>, <set>, <map>, <props> trong Spring XML dùng inject vào kiểu dữ liệu nào?",
+  opts:["Đều inject vào List","<list>→List/array, <set>→Set, <map>→Map (key-value bất kỳ type), <props>→Properties (String key-value)","<map> và <props> giống nhau","Chỉ <list> hợp lệ trong Spring"],
+  ans:1, explain:"Spring collection injection: <list> → List (duplicate ok), <set> → Set (unique), <map> → Map<K,V> (any type), <props> → java.util.Properties (String only)." },
+
+// ── Spring MVC – Nâng Cao ────────────────────────────────────────
+{ topic:"Spring MVC", q:"DispatcherServlet xử lý request theo trình tự nào?",
+  opts:["Request → View → Controller → Model","Request → DispatcherServlet → HandlerMapping → Controller → ModelAndView → ViewResolver → View → Response","Request → Database → Controller → View","Request → Security → View → Controller"],
+  ans:1, explain:"Luồng MVC: DispatcherServlet nhận request → HandlerMapping tìm Controller → Controller xử lý → trả ModelAndView → ViewResolver map tên → View render → Response." },
+
+{ topic:"Spring MVC", q:"Errors/BindingResult trong handler method parameter dùng để làm gì?",
+  opts:["Log lỗi hệ thống","Truy cập kết quả validation và binding của form – biết field nào lỗi","Ném exception","Rollback transaction"],
+  ans:1, explain:"BindingResult (phải đặt NGAY SAU @ModelAttribute param): chứa validation errors. Dùng hasErrors() kiểm tra, getFieldErrors() lấy danh sách lỗi." },
+
+{ topic:"Spring MVC", q:"SessionStatus trong handler method dùng để làm gì?",
+  opts:["Lấy thông tin HTTP session","Đánh dấu session processing hoàn thành – xóa session attributes được quản lý bởi @SessionAttributes","Tạo mới session","Hủy toàn bộ session"],
+  ans:1, explain:"SessionStatus.setComplete(): đánh dấu session processing done, xóa các session attributes đã được declare trong @SessionAttributes trên controller." },
+
+{ topic:"Spring MVC", q:"@CookieValue trong handler method parameter lấy gì?",
+  opts:["Tất cả cookies","Giá trị của một cookie cụ thể từ request","Domain của cookie","Thời gian hết hạn cookie"],
+  ans:1, explain:"@CookieValue(\"JSESSIONID\") String sessionId: inject giá trị của cookie có tên 'JSESSIONID' từ HTTP request vào parameter." },
+
+{ topic:"Spring MVC", q:"HibernateTransactionManager.setSessionFactory() liên kết gì với gì?",
+  opts:["DataSource với database","Transaction manager với SessionFactory – cho phép @Transactional quản lý Hibernate Session","Controller với Service","View với Model"],
+  ans:1, explain:"HibernateTransactionManager cần SessionFactory để bind Hibernate Session vào thread – cho phép @Transactional tự mở/đóng/rollback session Hibernate." },
+
+{ topic:"Spring MVC", q:"WebMvcConfigurer interface trong Spring MVC dùng để làm gì?",
+  opts:["Tạo database connection","Customize cấu hình Spring MVC: CORS, view resolvers, resource handlers, interceptors...","Cấu hình Hibernate","Khai báo Entity classes"],
+  ans:1, explain:"WebMvcConfigurer: implement các method muốn override: addCorsMappings(), configureViewResolvers(), addResourceHandlers(), addInterceptors()..." },
+
+{ topic:"Spring MVC", q:"Annotation @GetMapping(\"/products\") tương đương với cách viết nào?",
+  opts:["@RequestMapping(\"/products\")","@RequestMapping(value=\"/products\", method=RequestMethod.GET)","@Mapping(method=\"GET\", path=\"/products\")","@HttpGet(\"/products\")"],
+  ans:1, explain:"@GetMapping là shortcut của @RequestMapping(method=RequestMethod.GET). Tương tự: @PostMapping, @PutMapping, @DeleteMapping, @PatchMapping." },
+
+// ── Thymeleaf – Nâng Cao ─────────────────────────────────────────
+{ topic:"Thymeleaf", q:"th:text và th:utext khác nhau như thế nào?",
+  opts:["Hoàn toàn giống nhau","th:text escape HTML entities (an toàn hơn, mặc định); th:utext hiển thị HTML thô không escape (cẩn thận XSS)","th:utext nhanh hơn th:text","th:text chỉ cho text thuần"],
+  ans:1, explain:"th:text='<b>Hello</b>' → hiển thị &lt;b&gt;Hello&lt;/b&gt; (escaped, an toàn). th:utext='<b>Hello</b>' → hiển thị Hello in đậm (unescaped, nguy cơ XSS nếu từ user input)." },
+
+{ topic:"Thymeleaf", q:"Toán tử số học nào được Thymeleaf hỗ trợ?",
+  opts:["Chỉ + và -","+ - * / % (tương tự Java)","Chỉ + * /","Không hỗ trợ toán tử số học"],
+  ans:1, explain:"Thymeleaf hỗ trợ đầy đủ arithmetic: +, -, *, /, %. Ví dụ: th:text=\"${price * 1.1}\" tính giá sau thuế 10%." },
+
+{ topic:"Thymeleaf", q:"Trong Thymeleaf, cách nối chuỗi nào đúng?",
+  opts:["th:text=\"${name} + ' welcome'\"","th:text=\"'Hello, ' + ${name}\" hoặc th:text=\"|Hello, ${name}|\" (literal substitution)","th:text=\"concat(${name}, ' welcome')\"","th:text=\"${name}.concat(' welcome')\""],
+  ans:1, explain:"Hai cách: (1) th:text=\"'Hello, ' + ${name}\" dùng +. (2) th:text=\"|Hello, ${name}!|\" dùng literal substitution (pipeline). Cách 2 đọc dễ hơn." },
+
+{ topic:"Thymeleaf", q:"th:href=\"@{/products/{id}(id=${p.id})}\" tạo URL như thế nào nếu p.id=5?",
+  opts:["/products/{id}","@{products/5}","/products/5","products?id=5"],
+  ans:2, explain:"@{/products/{id}(id=${p.id})}: path variable syntax. (id=${p.id}) gán giá trị cho {id} placeholder → tạo /products/5." },
+
+{ topic:"Thymeleaf", q:"Điều gì xảy ra nếu dùng th:replace với fragment không tồn tại?",
+  opts:["Hiển thị nội dung rỗng","Ném exception hoặc lỗi template processing","Thymeleaf tự tìm fragment tương tự","Bỏ qua silently"],
+  ans:1, explain:"Nếu fragment không tồn tại (sai tên file hoặc tên fragment), Thymeleaf ném TemplateInputException khi render – không fail silently." },
+
+{ topic:"Thymeleaf", q:"status.even và status.odd trong th:each trả về gì?",
+  opts:["Số chẵn/lẻ của index","boolean: true nếu vòng lặp hiện tại là chẵn/lẻ – dùng để CSS striped rows","Tổng số phần tử chẵn/lẻ","Chỉ số của phần tử chẵn/lẻ"],
+  ans:1, explain:"status.even/odd: true/false cho biết iteration index (0-based) là chẵn hay lẻ. Ví dụ: th:class=\"${status.even ? 'row-even' : 'row-odd'}\" tô màu xen kẽ." },
+
+{ topic:"Thymeleaf", q:"ClassLoaderTemplateResolver trong ThymeleafConfig được cấu hình với prefix và suffix để làm gì?",
+  opts:["Chỉ định charset","Chỉ định thư mục và đuôi file template: prefix='templates/', suffix='.html' → tìm file tại resources/templates/home.html","Cấu hình cache","Đặt tên cho engine"],
+  ans:1, explain:"prefix=\"templates/\" + suffix=\".html\": khi controller return \"home\", Thymeleaf tìm file tại classpath:templates/home.html." },
+
+{ topic:"Thymeleaf", q:"Trong form Thymeleaf, th:object và th:field kết hợp như thế nào?",
+  opts:["Chỉ dùng được trong <div>, không trong <form>","th:object chọn model object cho form; th:field='*{property}' dùng *{} để truy cập property của object đó","th:field phải dùng ${} không phải *{}","Không thể kết hợp hai attribute này"],
+  ans:1, explain:"Pattern chuẩn: <form th:object='${user}'> → th:field='*{name}' tương đương th:field='${user.name}'. Spring tự sinh id, name, value attribute cho input." },
+
+{ topic:"Thymeleaf", q:"Sự khác biệt giữa th:include và th:insert trong các phiên bản Thymeleaf mới?",
+  opts:["Hoàn toàn giống nhau","th:include (cũ/deprecated): chỉ chèn NỘI DUNG bên trong fragment (bỏ tag fragment). th:insert: giữ cả tag của fragment","th:insert bị deprecated","th:include nhanh hơn"],
+  ans:1, explain:"th:include: chèn content của fragment nhưng bỏ tag gốc của fragment. th:insert: giữ nguyên cả tag fragment. th:replace: thay luôn element hiện tại bằng fragment." },
+
+// ── REST API – Nâng Cao ───────────────────────────────────────────
+{ topic:"REST API", q:"HTTP GET method có đặc điểm gì về idempotency và safety?",
+  opts:["Không idempotent, không safe","Idempotent và safe – gọi nhiều lần cho cùng kết quả, không thay đổi server state","Idempotent nhưng không safe","Safe nhưng không idempotent"],
+  ans:1, explain:"GET: idempotent (gọi 100 lần = 1 lần, cùng kết quả) và safe (không modify server state). POST: không idempotent (tạo nhiều resource mỗi lần gọi)." },
+
+{ topic:"REST API", q:"HTTP 401 Unauthorized khác HTTP 403 Forbidden như thế nào?",
+  opts:["Hoàn toàn giống nhau","401: chưa xác thực (chưa login); 403: đã xác thực nhưng không có quyền truy cập","401 nặng hơn 403","403 xảy ra khi server lỗi"],
+  ans:1, explain:"401 Unauthorized: không biết bạn là ai → cần authenticate. 403 Forbidden: biết bạn là ai nhưng không cho phép → không đủ quyền (role)." },
+
+{ topic:"REST API", q:"@JsonGetter trong Jackson được dùng khi nào?",
+  opts:["Đổi tên key trong JSON","Đánh dấu method là getter thay thế cho field trong quá trình serialization","Bỏ qua getter khi serialize","Tạo getter tự động"],
+  ans:1, explain:"@JsonGetter(\"customName\"): đánh dấu method sẽ được gọi khi serialize thay vì dùng field trực tiếp. Cho phép custom logic khi tạo JSON." },
+
+{ topic:"REST API", q:"@JsonValue trong Jackson có tác dụng gì?",
+  opts:["Validate giá trị JSON","Chỉ định DUY NHẤT MỘT method đại diện cho toàn bộ object khi serialize","Bỏ qua toàn bộ object","Định nghĩa value type"],
+  ans:1, explain:"@JsonValue: method này trả về representation của toàn bộ object trong JSON. Thường dùng với Enum để serialize thành giá trị đơn giản." },
+
+{ topic:"REST API", q:"@JsonRootName(\"product\") trong Jackson làm gì?",
+  opts:["Đổi tên class","Bọc JSON output trong object cha có tên 'product': {\"product\":{...}} thay vì {...}","Đặt root URL","Đổi tên package"],
+  ans:1, explain:"@JsonRootName: cần bật WRAP_ROOT_VALUE trong ObjectMapper. Kết quả: {\"product\":{\"id\":1,\"name\":\"...\"}} thay vì {\"id\":1,\"name\":\"...\"}." },
+
+{ topic:"REST API", q:"Preflight request trong CORS là gì?",
+  opts:["Request đầu tiên của user","Browser tự gửi HTTP OPTIONS request trước để hỏi server có cho phép cross-origin request không","Request để test API","Request để cache data"],
+  ans:1, explain:"Browser gửi OPTIONS preflight trước khi POST/PUT/DELETE cross-origin. Server phải trả về CORS headers. GET thường không cần preflight." },
+
+{ topic:"REST API", q:"ResponseEntity.ok(data) là cách viết tắt của gì?",
+  opts:["new ResponseEntity<>(data, HttpStatus.CREATED)","new ResponseEntity<>(data, HttpStatus.OK)","new ResponseEntity<>(HttpStatus.OK)","ResponseEntity.status(200)"],
+  ans:1, explain:"ResponseEntity.ok(data) = new ResponseEntity<>(data, HttpStatus.OK). Cũng có: ResponseEntity.created(uri).body(data), ResponseEntity.noContent().build()." },
+
+{ topic:"REST API", q:"API endpoint /api/products/{productId} với @PathVariable(value=\"productId\") – điều gì xảy ra nếu {productId} không phải số nguyên nhưng int được expect?",
+  opts:["Trả về null","Spring tự convert","Spring ném MethodArgumentTypeMismatchException → HTTP 400 Bad Request","Ném NullPointerException"],
+  ans:2, explain:"Type mismatch: Spring không thể convert '/abc' thành int → MethodArgumentTypeMismatchException → framework map thành 400 Bad Request." },
+
+{ topic:"REST API", q:"Jackson library được thêm vào Spring MVC bằng cách nào để hỗ trợ JSON?",
+  opts:["Tích hợp sẵn không cần cấu hình","Phải add dependency com.fasterxml.jackson.core:jackson-databind vào pom.xml","Cài thủ công bằng jar","Chỉ dùng được với Spring Boot"],
+  ans:1, explain:"jackson-databind dependency: khi Spring phát hiện Jackson trong classpath, tự động đăng ký MappingJackson2HttpMessageConverter để serialize/deserialize JSON." },
+
+{ topic:"REST API", q:"REST API thiết kế endpoint đúng chuẩn: lấy danh sách sản phẩm của category có id=3?",
+  opts:["/getProductsByCategory?id=3","/category/3/products","/products?categoryId=3 hoặc /categories/3/products đều hợp lệ","/findProducts/category/3"],
+  ans:2, explain:"RESTful: dùng noun (products, categories), không dùng verb (getProducts, findProducts). /categories/3/products (nested) hoặc /products?categoryId=3 (filter) đều được chấp nhận." },
+
+// ── Spring Security – Nâng Cao ────────────────────────────────────
+{ topic:"Spring Security", q:"Tại sao cần disable CSRF khi làm REST API stateless?",
+  opts:["CSRF làm chậm API","REST API stateless không dùng session/cookie – không có CSRF risk, disable để simplify","CSRF không tương thích với JSON","Để tăng tốc độ response"],
+  ans:1, explain:"CSRF tấn công khi browser tự gửi cookie session. REST API thường dùng token trong header (Bearer) không tự gửi → không có CSRF risk → có thể disable." },
+
+{ topic:"Spring Security", q:"hasRole(\"ADMIN\") và hasAuthority(\"ROLE_ADMIN\") khác nhau như thế nào?",
+  opts:["Hoàn toàn giống nhau","hasRole() tự động prepend 'ROLE_' prefix; hasAuthority() dùng tên chính xác không prepend","hasAuthority() mạnh hơn hasRole()","hasRole() chỉ dùng trong XML config"],
+  ans:1, explain:"hasRole(\"ADMIN\") = hasAuthority(\"ROLE_ADMIN\"). Spring Security convention: role names stored with ROLE_ prefix. hasRole() tự thêm prefix khi so sánh." },
+
+{ topic:"Spring Security", q:"UserDetails interface yêu cầu implement những method nào?",
+  opts:["Chỉ getUsername() và getPassword()","getUsername(), getPassword(), getAuthorities(), isAccountNonExpired(), isAccountNonLocked(), isCredentialsNonExpired(), isEnabled()","Chỉ loadUserByUsername()","getUsername(), getPassword(), getRole()"],
+  ans:1, explain:"UserDetails: 7 methods cần implement. 4 boolean methods (NonExpired, NonLocked, CredentialsNonExpired, Enabled) thường return true cho đơn giản." },
+
+{ topic:"Spring Security", q:"formLogin().loginProcessingUrl(\"/login\") khác loginPage(\"/login\") như thế nào?",
+  opts:["Hoàn toàn giống nhau","loginPage: URL để HIỂN THỊ form login (GET); loginProcessingUrl: URL để SUBMIT form (POST xử lý xác thực)","loginProcessingUrl là URL sau khi login thành công","loginPage là URL API endpoint"],
+  ans:1, explain:"loginPage(\"/login\"): Spring tạo GET /login trả về trang login. loginProcessingUrl(\"/login\"): Spring xử lý POST /login để xác thực credentials." },
+
+{ topic:"Spring Security", q:"Spring Security filter chain chặn request ở đâu trong vòng đời Spring MVC?",
+  opts:["Sau khi Controller xử lý","Trước khi request đến DispatcherServlet (Servlet Filter level)","Trong View layer","Sau khi Response được tạo"],
+  ans:1, explain:"Spring Security là Servlet Filter – chặn request TRƯỚC khi vào Spring MVC DispatcherServlet. Authentication/Authorization được kiểm tra ở Servlet layer." },
+
+{ topic:"Spring Security", q:"sec:authentication=\"name\" trong Thymeleaf hiển thị gì?",
+  opts:["Tên role của user","Username của người dùng đang đăng nhập (từ Authentication.getName())","ID của user trong DB","Email của user"],
+  ans:1, explain:"sec:authentication=\"name\" lấy Authentication.getName() = username. sec:authentication=\"authorities\" lấy danh sách role." },
+
+{ topic:"Spring Security", q:"logout().invalidateHttpSession(true) làm gì?",
+  opts:["Chỉ xóa cookie","Xóa SecurityContext, xóa toàn bộ HTTP session và các attributes khi logout","Redirect về trang chủ","Chỉ xóa authentication token"],
+  ans:1, explain:"invalidateHttpSession(true) (mặc định): invalidate toàn bộ HTTP session khi logout. Kết hợp clearAuthentication(true) xóa sạch SecurityContext." },
+
+{ topic:"Spring Security", q:"BCrypt tại sao được coi là an toàn hơn MD5 hay SHA để hash password?",
+  opts:["BCrypt nhanh hơn","BCrypt có built-in salt (ngăn rainbow table) và work factor điều chỉnh được (chậm hơn cố ý để ngăn brute force)","BCrypt tạo hash ngắn hơn","BCrypt là standard của Java"],
+  ans:1, explain:"BCrypt: (1) salt ngẫu nhiên cho mỗi hash → cùng password cho hash khác nhau → phá rainbow table. (2) work factor (cost) → tăng thời gian hash → brute force tốn kém." },
+
+// ── ReactJS – Nâng Cao ────────────────────────────────────────────
+{ topic:"ReactJS", q:"Tại sao KHÔNG nên mutate state trực tiếp trong React (ví dụ: this.state.count++)?",
+  opts:["Vì JavaScript không cho phép","React không detect thay đổi trực tiếp → không trigger re-render. Phải dùng setState()/useState setter","Vì state là const","Vì làm chậm performance"],
+  ans:1, explain:"React so sánh reference để detect thay đổi. Mutate trực tiếp → reference không đổi → React không biết state đã thay đổi → không re-render." },
+
+{ topic:"ReactJS", q:"shouldComponentUpdate() trong class component trả về false sẽ có tác dụng gì?",
+  opts:["Component bị unmount","Component KHÔNG re-render khi state/props thay đổi – tối ưu performance","Component re-render 2 lần","Throw error"],
+  ans:1, explain:"shouldComponentUpdate(nextProps, nextState): nếu return false → React skip render() và componentDidUpdate(). Dùng để tối ưu khi props/state change không ảnh hưởng UI." },
+
+{ topic:"ReactJS", q:"getSnapshotBeforeUpdate() trong lifecycle được gọi khi nào và dùng để làm gì?",
+  opts:["Trước khi mount","Ngay TRƯỚC KHI DOM được update (sau render, trước componentDidUpdate) – capture DOM info (scroll position...)","Sau khi unmount","Thay thế getDerivedStateFromProps"],
+  ans:1, explain:"getSnapshotBeforeUpdate(prevProps, prevState): return value được truyền làm tham số thứ 3 vào componentDidUpdate. Dùng để capture scroll position trước khi update." },
+
+{ topic:"ReactJS", q:"getDerivedStateFromProps() là static method, điều đó có ý nghĩa gì?",
+  opts:["Không thể dùng trong class component","Không thể dùng this – không access được instance, chỉ nhận props và state, return object để merge vào state","Chạy nhanh hơn instance method","Chỉ gọi 1 lần"],
+  ans:1, explain:"static: không có this context. Signature: static getDerivedStateFromProps(props, state) → return {stateKey: value} hoặc null. Pure function, no side effects." },
+
+{ topic:"ReactJS", q:"useState setter function được gọi với callback (functional update) khi nào cần thiết?",
+  opts:["Luôn luôn phải dùng callback","Khi giá trị mới phụ thuộc vào giá trị CŨ: setCount(prev => prev + 1) thay vì setCount(count + 1)","Khi set nhiều state cùng lúc","Khi state là object"],
+  ans:1, explain:"setCount(prev => prev + 1): đảm bảo dùng giá trị state mới nhất, tránh stale closure bug khi nhiều update xảy ra trong cùng event cycle." },
+
+{ topic:"ReactJS", q:"useEffect chạy SAU render hay TRƯỚC render?",
+  opts:["Trước render","Sau khi React commit changes lên DOM – SAU render và paint","Trong quá trình render","Cùng lúc với render"],
+  ans:1, explain:"useEffect: runs AFTER React updates the DOM (after render + paint). componentDidMount/Update cũng vậy. Khác với useLayoutEffect (trước paint, đồng bộ)." },
+
+{ topic:"ReactJS", q:"useRef() khởi tạo với giá trị null và dùng ref={myRef} trên DOM element, khi nào myRef.current có giá trị?",
+  opts:["Ngay khi khai báo useRef()","Sau khi component mount lần đầu (componentDidMount phase)","Sau mỗi render","Chỉ khi người dùng click vào element"],
+  ans:1, explain:"myRef.current = null cho đến khi React mount component và gắn DOM element vào ref. Sau componentDidMount, myRef.current trỏ đến DOM node thực." },
+
+{ topic:"ReactJS", q:"React.memo dùng shallow comparison. Điều gì xảy ra nếu prop là object/array mới mỗi render?",
+  opts:["Memo luôn hoạt động đúng","Object/array mới mỗi render → reference khác → shallow comparison fail → memo KHÔNG ngăn được re-render","Memo so sánh deep","Memo ignore object props"],
+  ans:1, explain:"memo dùng Object.is (shallow). Object {} !== {} dù nội dung giống → memo không hiệu quả với inline objects/arrays. Cần useMemo hoặc move object ra ngoài component." },
+
+{ topic:"ReactJS", q:"useCallback(() => fn, [deps]) – khi nào function được tạo lại?",
+  opts:["Mỗi render","Chỉ một lần","Chỉ khi deps thay đổi (giống useMemo)","Không bao giờ"],
+  ans:2, explain:"useCallback(fn, [deps]): trả về cùng function reference nếu deps không thay đổi. Khi deps thay đổi → tạo function mới. Tương đương useMemo(() => fn, [deps])." },
+
+{ topic:"ReactJS", q:"Trong React Context, nếu Provider value thay đổi, điều gì xảy ra với Consumer?",
+  opts:["Chỉ Provider re-render","Tất cả Consumer components (useContext(MyContext)) re-render bất kể có React.memo hay không","Không có gì xảy ra","Chỉ Consumer gần nhất re-render"],
+  ans:1, explain:"Context value thay đổi → TẤT CẢ components đang useContext(MyContext) sẽ re-render, kể cả được bọc bởi React.memo. memo chỉ so sánh props, không phải context." },
+
+{ topic:"ReactJS", q:"import axios from 'axios' vs axios.create({baseURL: '...'}) khác nhau như thế nào?",
+  opts:["Hoàn toàn giống nhau","axios default instance dùng cho mọi request; axios.create() tạo instance riêng với config mặc định (baseURL, headers...) – best practice cho API module","axios.create() chậm hơn","Chỉ axios.create() hỗ trợ async/await"],
+  ans:1, explain:"axios.create({baseURL, timeout, headers}): tạo instance với config preset. Tất cả request từ instance này tự áp dụng baseURL. Dễ quản lý nhiều API endpoint khác nhau." },
+
+{ topic:"ReactJS", q:"Trong React Router v6, tại sao không còn dùng <Switch> nữa?",
+  opts:["Switch bị deprecated vì bug","<Routes> thay thế <Switch> với matching chính xác hơn và hỗ trợ nested routes tốt hơn","Switch vẫn hoạt động trong v6","Routes chậm hơn Switch"],
+  ans:1, explain:"React Router v6: <Routes> thay <Switch>. Routes match chính xác (exact mặc định), hỗ trợ nested routes, loại bỏ nhiều props phức tạp. Component prop đổi thành element prop." },
+
+{ topic:"ReactJS", q:"NavLink className có thể là function trong React Router v6, điều này có ý nghĩa gì?",
+  opts:["Bug của NavLink","Cho phép custom class name dựa trên active state: className={({isActive}) => isActive ? 'active' : ''}","Không thể là function","Chỉ dùng cho styled-components"],
+  ans:1, explain:"v6 NavLink: className={({isActive, isPending}) => isActive ? 'nav-active' : 'nav-link'} → dynamic className theo trạng thái route. Linh hoạt hơn v5." },
+
+{ topic:"ReactJS", q:"Khi nào nên dùng useReducer thay vì useState?",
+  opts:["Luôn luôn dùng useReducer","Khi có nhiều sub-state liên quan hoặc next state phụ thuộc phức tạp vào previous state; khi cần chia sẻ logic update","useState luôn đủ","useReducer chỉ dùng với Redux"],
+  ans:1, explain:"useReducer phù hợp: (1) state là object phức tạp nhiều fields, (2) update logic phức tạp, (3) muốn tách state logic ra reducer function để test riêng." },
+
+{ topic:"ReactJS", q:"cookies.load(\"access-token\") trả về gì nếu cookie không tồn tại?",
+  opts:["Ném exception","Empty string \"\"","undefined","null"],
+  ans:2, explain:"cookies.load(name): trả về undefined nếu cookie không tồn tại. Cần kiểm tra: if (cookies.load('access-token')) {...} trước khi dùng." },
+
+{ topic:"ReactJS", q:"FormData.append() vs FormData.set() khác nhau như thế nào?",
+  opts:["Hoàn toàn giống nhau","append(): thêm value mới (có thể có nhiều value cùng key); set(): ghi đè tất cả value của key đó bằng value mới","set() không tồn tại trong FormData","append() chỉ cho file"],
+  ans:1, explain:"append(key, val): add value, key có thể có nhiều values. set(key, val): replace tất cả values của key đó bằng 1 value mới. Với file upload, thường dùng append()." },
+
+{ topic:"ReactJS", q:"SPA (Single Page Application) có lợi điểm gì so với truyền thống Multi-Page?",
+  opts:["SPA luôn SEO tốt hơn","SPA không reload trang khi navigate – UX mượt hơn, chỉ load data cần thiết qua API, app-like experience","SPA nhanh hơn trong lần load đầu","SPA không cần server"],
+  ans:1, explain:"SPA: 1 lần load HTML/JS/CSS, sau đó React Router handle navigation client-side không reload. Nhược: initial load nặng hơn, SEO cần SSR. Ưu: UX mượt, ít request hơn." },
+
+{ topic:"ReactJS", q:"Vì sao class component cần gọi super(props) trong constructor?",
+  opts:["Để khởi tạo state","Để gọi constructor của React.Component – nếu không, this.props sẽ undefined trong constructor","Để đăng ký lifecycle","Bắt buộc theo cú pháp JavaScript"],
+  ans:1, explain:"super(props): gọi constructor của React.Component với props → React.Component lưu props vào this.props. Nếu không có, this.props = undefined trong constructor scope." },
+
+{ topic:"ReactJS", q:"React Font Awesome: tại sao dùng @fortawesome/react-fontawesome thay vì CDN?",
+  opts:["CDN không hỗ trợ React","Dùng SVG icons thay vì font file – chỉ bundle icon thực sự dùng (tree-shaking), không load toàn bộ icon set","react-fontawesome miễn phí hơn","CDN không hỗ trợ TypeScript"],
+  ans:1, explain:"@fortawesome/react-fontawesome: SVG-based, hỗ trợ tree-shaking (chỉ import icon dùng), không cần CDN request, hỗ trợ props: size, color, spin, rotation, flip..." },
+
+{ topic:"ReactJS", q:"animate.css trong React: class 'animate__animated animate__bounce' cần thêm cả hai class vì lý do gì?",
+  opts:["animate__animated là bắt buộc của CSS","animate__animated: khai báo dùng animate.css; animate__bounce: tên animation cụ thể. Phải có cả hai để animation hoạt động","Có thể chỉ dùng animate__bounce","animate__animated thay thế className"],
+  ans:1, explain:"animate.css yêu cầu base class 'animate__animated' (chứa animation-duration mặc định) + animation class 'animate__bounce'. Thiếu 1 trong 2 → animation không chạy." },
+
+// ── JDBC thêm (MySQL syntax) ────────────────────────────────────
+{ topic:"JDBC", q:"Trong MySQL, LIMIT và OFFSET trong SELECT dùng để làm gì?",
+  opts:["Giới hạn số cột trả về","LIMIT N: lấy tối đa N hàng; OFFSET M: bỏ qua M hàng đầu tiên – dùng để phân trang","Sắp xếp kết quả","Lọc kết quả theo điều kiện"],
+  ans:1, explain:"Phân trang: SELECT * FROM product LIMIT 10 OFFSET 20 → bỏ 20 hàng đầu, lấy 10 hàng tiếp theo. Trang 3 với page size 10 = OFFSET (3-1)*10 = 20." },
+
+{ topic:"JDBC", q:"HAVING trong MySQL khác WHERE ở điểm nào?",
+  opts:["Hoàn toàn giống nhau","WHERE lọc hàng TRƯỚC khi GROUP BY; HAVING lọc nhóm SAU khi GROUP BY (thường dùng với aggregate functions)","HAVING nhanh hơn WHERE","WHERE không dùng được với GROUP BY"],
+  ans:1, explain:"WHERE: lọc individual rows. HAVING: lọc groups sau GROUP BY. Ví dụ: SELECT category_id, COUNT(*) FROM product GROUP BY category_id HAVING COUNT(*) > 5." },
+
+// ── Hibernate thêm ─────────────────────────────────────────────
+{ topic:"Hibernate", q:"@Entity class trong Hibernate phải implement Serializable vì lý do gì?",
+  opts:["Hibernate yêu cầu bắt buộc","Cần để entity có thể được serialize (lưu session, distributed cache, RMI) – best practice dù không luôn bắt buộc","Để hỗ trợ @Id","Để override equals/hashCode"],
+  ans:1, explain:"Serializable: cho phép entity object được serialize để lưu vào session, distributed cache (Ehcache), hoặc truyền qua mạng (RMI). Hibernate không bắt buộc nhưng strongly recommended." },
+
+{ topic:"Hibernate", q:"Trong Hibernate Configuration (hibernate.properties hoặc hibernate.cfg.xml), 'hibernate.dialect' dùng để làm gì?",
+  opts:["Cấu hình charset","Nói cho Hibernate biết loại database đang dùng – Hibernate sẽ generate SQL phù hợp (MySQL, PostgreSQL, MSSQL...)","Đặt tên schema","Cấu hình connection pool"],
+  ans:1, explain:"hibernate.dialect=org.hibernate.dialect.MySQLDialect: Hibernate dùng dialect để generate SQL tối ưu cho database cụ thể (MySQL dùng backticks, MSSQL dùng brackets...)." },
+
+// ── Spring Security thêm ───────────────────────────────────────
+{ topic:"Spring Security", q:"Tại sao cần thêm dependency 'thymeleaf-extras-springsecurity6' riêng?",
+  opts:["Thymeleaf không hỗ trợ HTML","Thêm Thymeleaf dialect mới (sec:*) để dùng Spring Security features trong template – không có sẵn trong Thymeleaf core","Để bật CSRF protection","Để mã hóa template"],
+  ans:1, explain:"thymeleaf-extras-springsecurity6: cung cấp SpringSecurityDialect + xmlns:sec namespace. Phải thêm e.addDialect(new SpringSecurityDialect()) vào templateEngine bean." },
+
+{ topic:"Spring Security", q:"loadUserByUsername() ném exception nào khi không tìm thấy user?",
+  opts:["NullPointerException","UserNotFoundException","UsernameNotFoundException","AuthenticationException"],
+  ans:2, explain:"loadUserByUsername() ném UsernameNotFoundException (extends AuthenticationException). Spring Security catch exception này và chuyển thành authentication failure." },
+
 ];
+
 
 // =====================================================================
 // APP STATE
