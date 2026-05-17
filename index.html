@@ -2345,252 +2345,452 @@ ans:1,explain:"memo dùng Object.is (tương đương ===, shallow). {} !== {} d
   opts:["NullPointerException","UserNotFoundException","UsernameNotFoundException","AuthenticationException"],
   ans:2, explain:"loadUserByUsername() ném UsernameNotFoundException (extends AuthenticationException). Spring Security catch exception này và chuyển thành authentication failure." },
 
-// ──────────────── CODE (TH1-JDBC) ────────────────
-{topic:"Code",q:"Trong TH1, lớp JdbcUtils có nhiệm vụ chính là gì?",
-opts:["Kết nối đến Thymeleaf","Load driver và tạo Connection dùng chung","Xử lý Stored Procedure","Quản lý Session Hibernate"],
-ans:1,explain:"JdbcUtils là lớp tiện ích: nạp driver bằng Class.forName(), cung cấp phương thức getConnection() để các lớp Service tái sử dụng."},
+// ──────────────── CODE – HIBERNATE ────────────────
 
-{topic:"Code",q:"TH1 yêu cầu thêm một câu hỏi vào DB. Vì câu hỏi gồm bảng question VÀ bảng choice, cần dùng gì?",
-opts:["Hai Statement riêng lẻ","Transaction để đảm bảo thêm đủ cả hai bảng","Stored Procedure duy nhất","Batch processing"],
-ans:1,explain:"Thêm question rồi mới thêm các choice liên quan. Nếu lỗi giữa chừng cần rollback. Phải dùng transaction: setAutoCommit(false) → commit/rollback."},
+// === CẤU HÌNH & SESSION FACTORY ===
+{topic:"Code",q:"Lớp HibernateUtils trong TH2 thường tạo gì và đặt trong field static?",
+opts:["DataSource connection pool","SessionFactory duy nhất dùng chung toàn app","List các entity class","Connection đến DB"],
+ans:1,explain:"SessionFactory rất nặng (parse config, map entity, tạo pool). Tạo 1 lần lúc khởi động, lưu field static, tái sử dụng mọi nơi qua HibernateUtils.getFactory()."},
 
-{topic:"Code",q:"Trong TH1, QuestionService và ChoiceService tương ứng với bảng nào trong DB?",
-opts:["user và role","question và choice","exam và result","topic và answer"],
-ans:1,explain:"Theo hướng dẫn TH1: QuestionService xử lý bảng question, ChoiceService xử lý bảng choice (phương án lựa chọn cho câu hỏi)."},
+{topic:"Code",q:"Cách đúng để lấy Session từ SessionFactory trong một method service là gì?",
+opts:["new Session(factory)","factory.openSession()","factory.createSession()","Session.open(factory)"],
+ans:1,explain:"factory.openSession(): mở Session mới, độc lập, cần đóng thủ công bằng session.close(). Dùng try-with-resources hoặc finally để đảm bảo đóng."},
 
-{topic:"Code",q:"TH1 yêu cầu Stored Procedure tìm câu hỏi theo từ khóa. Tham số truyền vào là loại IN hay OUT?",
-opts:["OUT (nhận kết quả)","INOUT (vừa vào vừa ra)","IN (truyền từ khóa vào)","Không có tham số"],
-ans:2,explain:"Stored Procedure nhận từ khóa tìm kiếm từ bên ngoài → dùng tham số IN. Kết quả trả về qua ResultSet, không qua tham số OUT."},
+{topic:"Code",q:"Khối code chuẩn để thực hiện một transaction Hibernate trông như thế nào?",
+opts:["session.start(); ... session.end();","session.getTransaction().begin(); ... session.getTransaction().commit();","session.open(); ... session.close();","Transaction tx = new Transaction(); tx.run();"],
+ans:1,explain:"session.getTransaction().begin() mở transaction; commit() xác nhận; rollback() hủy nếu có exception. Luôn đặt commit/rollback trong try-catch."},
 
-{topic:"Code",q:"Để gọi Stored Procedure trong TH1, dùng loại Statement nào?",
-opts:["Statement","PreparedStatement","CallableStatement","BatchStatement"],
-ans:2,explain:"CallableStatement gọi Stored Procedure với cú pháp: conn.prepareCall('{CALL procedure_name(?)}')."},
+{topic:"Code",q:"Sau khi dùng xong Session, cần gọi gì để tránh memory leak?",
+opts:["session.flush()","session.clear()","session.close()","session.detach()"],
+ans:2,explain:"session.close(): giải phóng tài nguyên DB (connection), đóng L1 cache. Nếu không đóng sẽ leak connection. Dùng try-with-resources: try(Session s = factory.openSession())."},
 
-{topic:"Code",q:"Trong TH1, khi thêm câu hỏi có tham số (câu hỏi, độ khó...), dùng Statement nào để chống SQL Injection?",
-opts:["Statement thường","CallableStatement","PreparedStatement với placeholder (?)","ResultSet"],
-ans:2,explain:"PreparedStatement: câu SQL cố định với ?, sau đó setString/setInt để truyền giá trị. Tránh SQL Injection và tái sử dụng được."},
+{topic:"Code",q:"Configuration trong hibernate.cfg.xml khai báo entity theo cách nào?",
+opts:["<entity class='...'/>","<mapping class='com.dht.pojo.Product'/>","<include package='com.dht.pojo'/>","<scan class='...'/>"],
+ans:1,explain:"<mapping class='com.dht.pojo.Product'/> khai báo từng entity class. Trong Spring dùng sessionFactory.setPackagesToScan() để scan cả package thay vì liệt kê từng class."},
 
-{topic:"Code",q:"Khi hiển thị từng câu hỏi cho người dùng chọn đáp án (TH1), phương thức ResultSet nào dùng để lấy dữ liệu?",
-opts:["rs.getString() và rs.next()","rs.execute() và rs.fetch()","rs.read() và rs.getRow()","rs.query() và rs.scan()"],
-ans:0,explain:"rs.next() di chuyển con trỏ sang dòng tiếp theo (trả false khi hết). rs.getString('column') / rs.getInt() lấy giá trị từng cột."},
+// === ANNOTATION ENTITY ===
+{topic:"Code",q:"Để ánh xạ class Product với bảng 'products' trong DB, khai báo tối thiểu cần gì?",
+opts:["@Table(name='products')","@Entity @Table(name='products')","@Entity","@Persistent @Table('products')"],
+ans:1,explain:"@Entity (bắt buộc): đánh dấu persistent class. @Table(name='products'): chỉ định tên bảng. Nếu bỏ @Table, Hibernate dùng tên class làm tên bảng."},
 
-{topic:"Code",q:"TH1 dùng gói com.dht.pojo. Gói này chứa gì?",
-opts:["Lớp kết nối DB","Lớp POJO tương ứng bảng question và choice","Lớp xử lý giao diện","File cấu hình Maven"],
-ans:1,explain:"Theo hướng dẫn TH1: gói com.dht.pojo chứa các lớp Java (POJO) ánh xạ với các bảng của CSDL, gồm Question.java và Choice.java."},
+{topic:"Code",q:"Annotation nào tạo khóa chính tự tăng (AUTO_INCREMENT MySQL) trong Hibernate?",
+opts:["@Id @Column(autoIncrement=true)","@Id @GeneratedValue(strategy=GenerationType.IDENTITY)","@PrimaryKey @Auto","@Id @Sequence"],
+ans:1,explain:"@Id đánh dấu PK. @GeneratedValue(IDENTITY): delegate cho DB tự tăng (MySQL AUTO_INCREMENT). Sau persist(), Hibernate sync ID vào object."},
 
-{topic:"Code",q:"Trong TH1, sau khi thêm question thành công, làm sao lấy được ID vừa sinh (auto-increment) để thêm choice?",
-opts:["Dùng getLastInsertId()","Dùng getGeneratedKeys() trên PreparedStatement","Dùng SELECT MAX(id)","Dùng LAST_INSERT_ID() trong stored procedure"],
-ans:1,explain:"PreparedStatement.RETURN_GENERATED_KEYS: sau executeUpdate(), gọi getGeneratedKeys() trả ResultSet chứa ID vừa insert. Chính xác và thread-safe."},
+{topic:"Code",q:"@Column(name='unit_price', nullable=false) trên field price nghĩa là gì?",
+opts:["Cột tên 'price', có thể null","Cột tên 'unit_price', NOT NULL trong DB","Validate giá trị price > 0","Đặt giá trị default cho price"],
+ans:1,explain:"name='unit_price': ánh xạ field price Java sang cột unit_price DB. nullable=false: sinh DDL NOT NULL. Không ảnh hưởng runtime validate, chỉ ảnh hưởng schema."},
 
-{topic:"Code",q:"Spring JDBC (TH1 yêu cầu 3) dùng JdbcTemplate thay cho thuần JDBC. Lợi ích chính là gì?",
-opts:["Nhanh hơn native JDBC","Tự động đóng Connection, Statement, ResultSet","Tự generate SQL","Hỗ trợ NoSQL"],
-ans:1,explain:"JdbcTemplate của Spring tự quản lý vòng đời: mở connection, tạo statement, đóng tất cả sau khi query. Giảm boilerplate code try-catch-finally."},
+{topic:"Code",q:"@Lob trên field description trong entity Product dùng để làm gì?",
+opts:["Validate độ dài tối đa","Ánh xạ field sang kiểu TEXT/CLOB trong DB","Mã hóa dữ liệu","Bắt buộc nhập description"],
+ans:1,explain:"@Lob (Large Object): Hibernate ánh xạ sang TEXT (CLOB) hoặc BLOB tùy kiểu Java. Dùng khi nội dung dài hơn VARCHAR(255) mặc định."},
 
-{topic:"Code",q:"Trong TH1, để hiển thị kết quả từng câu trả lời của user, cần so sánh gì?",
-opts:["Tên câu hỏi với đáp án","Choice được chọn với is_correct trong bảng choice","Score tổng với passing score","User ID với question ID"],
-ans:1,explain:"Bảng choice có cột is_correct (boolean/tinyint). So sánh choice user chọn với is_correct=true để xác định đúng/sai và hiển thị kết quả."},
+{topic:"Code",q:"@Temporal(TemporalType.DATE) trên field createdDate có tác dụng gì?",
+opts:["Validate định dạng ngày","Lưu chỉ phần DATE (không giờ phút giây) vào DB","Tự động set ngày hiện tại","Format ngày ra JSON"],
+ans:1,explain:"@Temporal chỉ định phần nào của java.util.Date được lưu: DATE (ngày), TIME (giờ), TIMESTAMP (cả hai). Không dùng @Temporal với Java 8+ LocalDate/LocalDateTime."},
 
-// ──────────────── CODE (TH2-Hibernate) ────────────────
-{topic:"Code",q:"Trong TH2, HibernateUtils.java có vai trò gì?",
-opts:["Kết nối REST API","Khởi tạo và cung cấp SessionFactory dùng chung","Xử lý file upload","Quản lý HTTP session"],
-ans:1,explain:"HibernateUtils tạo SessionFactory một lần (singleton) lúc khởi động, cung cấp phương thức getFactory() để các lớp Service mở Session."},
+// === QUAN HỆ – MANY TO ONE ===
+{topic:"Code",q:"Trong TH2, Product thuộc một Category. Annotation nào đặt trên field category trong class Product?",
+opts:["@OneToMany","@ManyToMany","@ManyToOne @JoinColumn(name='category_id')","@OneToOne @JoinColumn(name='category_id')"],
+ans:2,explain:"Nhiều Product → một Category: @ManyToOne. @JoinColumn(name='category_id'): cột khóa ngoại nằm ở bảng products, tham chiếu đến bảng categories."},
 
-{topic:"Code",q:"Trong TH2, mối quan hệ giữa Product và Category là gì?",
-opts:["Nhiều product - nhiều category","Một product - nhiều category","Một category - nhiều product (Product @ManyToOne Category)","Một product - một category duy nhất"],
-ans:2,explain:"Một danh mục có nhiều sản phẩm, một sản phẩm thuộc một danh mục. Product có @ManyToOne Category với @JoinColumn chứa khóa ngoại."},
+{topic:"Code",q:"@JoinColumn(name='category_id') trên field @ManyToOne trong Product nghĩa là gì?",
+opts:["Tạo bảng trung gian","Cột category_id là FK trong bảng products","Đặt tên alias cho category","Tạo index cho category"],
+ans:1,explain:"@JoinColumn xác định cột FK ở phía OWNER (bảng products). category_id chứa giá trị id của Category liên kết. Hibernate tự sinh JOIN khi query."},
 
-{topic:"Code",q:"Trong TH2, mối quan hệ giữa Product và Manufacturer (nhà sản xuất) là gì?",
-opts:["@OneToOne","@ManyToOne","@OneToMany","@ManyToMany"],
-ans:3,explain:"Đề TH2 nêu rõ: mỗi sản phẩm có thể thuộc nhiều nhà sản xuất. @ManyToMany tạo bảng trung gian product_manufacturer."},
+{topic:"Code",q:"Trong Category, để lấy danh sách Product thuộc category đó, khai báo như thế nào?",
+opts:["@ManyToOne List<Product> products","@OneToMany(mappedBy='category') List<Product> products","@ManyToMany List<Product> products","@OneToMany @JoinColumn List<Product> products"],
+ans:1,explain:"@OneToMany(mappedBy='category'): inverse side, không có FK. mappedBy='category' trỏ đến field category trong Product (owner). Hibernate tự JOIN khi truy cập."},
 
-{topic:"Code",q:"@ManyToMany trong TH2 cần annotation nào để chỉ định bảng trung gian?",
-opts:["@JoinColumn","@JoinTable","@MappedBy","@ForeignKey"],
-ans:1,explain:"@JoinTable(name='product_manufacturer', joinColumns=@JoinColumn(name='product_id'), inverseJoinColumns=@JoinColumn(name='manufacturer_id')) định nghĩa bảng trung gian."},
+{topic:"Code",q:"mappedBy='category' trong @OneToMany của Category có ý nghĩa gì?",
+opts:["Đặt tên cho relationship","Chỉ field 'category' trong Product là owner, có cột FK","Tạo cột category_id trong bảng categories","Khai báo cascade type"],
+ans:1,explain:"mappedBy: bên inverse (Category) không có cột FK. Owner (Product) có @JoinColumn thực sự. Nếu không mappedBy, Hibernate tạo bảng trung gian nhầm."},
 
-{topic:"Code",q:"HQL tìm sản phẩm theo khoảng giá trong TH2 dùng từ khóa nào?",
-opts:["BETWEEN ... AND ...","price >= ? AND price <= ?","RANGE(min, max)","BETWEEN giống SQL"],
-ans:0,explain:"HQL: 'FROM Product p WHERE p.price BETWEEN :minPrice AND :maxPrice'. BETWEEN trong HQL hoạt động như SQL, dùng named parameter :minPrice :maxPrice."},
+// === QUAN HỆ – MANY TO MANY ===
+{topic:"Code",q:"Trong TH2, Product có thể thuộc nhiều Manufacturer. Annotation nào dùng cho field manufacturers trong Product?",
+opts:["@ManyToOne","@OneToMany","@OneToOne","@ManyToMany @JoinTable(...)"],
+ans:3,explain:"@ManyToMany: một Product có nhiều Manufacturer, một Manufacturer sản xuất nhiều Product. Hibernate tự tạo bảng trung gian hoặc theo @JoinTable."},
 
-{topic:"Code",q:"Trong TH2, HQL tìm kiếm theo tên sản phẩm (không phân biệt hoa thường) dùng gì?",
-opts:["WHERE name = :name","WHERE name LIKE :name","WHERE LOWER(name) LIKE LOWER(:name)","WHERE name CONTAINS :name"],
-ans:2,explain:"LOWER() cả hai vế để tìm không phân biệt hoa/thường: 'WHERE LOWER(p.name) LIKE LOWER(:keyword)' với keyword = '%' + kw + '%'."},
+{topic:"Code",q:"@JoinTable trong @ManyToMany cần khai báo những gì?",
+opts:["Chỉ cần tên bảng trung gian","name, joinColumns, inverseJoinColumns","Chỉ cần joinColumns","Chỉ cần inverseJoinColumns"],
+ans:1,explain:"@JoinTable(name='product_manufacturer', joinColumns=@JoinColumn(name='product_id'), inverseJoinColumns=@JoinColumn(name='manufacturer_id')): đầy đủ 3 thông tin cần thiết."},
 
-{topic:"Code",q:"HQL sắp xếp kết quả theo tên tăng dần trong TH2 dùng cú pháp nào?",
-opts:["SORT BY p.name ASC","ORDER BY p.name ASC","ARRANGE p.name ASCENDING","GROUP BY p.name ASC"],
-ans:1,explain:"HQL dùng ORDER BY giống SQL: 'FROM Product p ORDER BY p.name ASC'. Dùng property Java (name) không phải tên cột DB."},
+{topic:"Code",q:"Phía Manufacturer trong @ManyToMany khai báo ngược lại với mappedBy thế nào?",
+opts:["@ManyToMany @JoinTable(...)","@ManyToMany(mappedBy='manufacturers')","@OneToMany(mappedBy='products')","@ManyToMany không cần khai báo"],
+ans:1,explain:"@ManyToMany(mappedBy='manufacturers'): bên inverse, không có @JoinTable. mappedBy trỏ đến tên field trong class Product (owner), tránh tạo 2 bảng trung gian."},
 
-{topic:"Code",q:"Trong TH2 yêu cầu 2, để xóa sản phẩm bằng Hibernate dùng phương thức nào?",
-opts:["session.delete(p)","session.remove(p)","session.drop(p)","session.erase(p)"],
-ans:1,explain:"Hibernate 6+ (Jakarta): session.remove(entity). Hibernate 5 cũ dùng session.delete(). Cần load entity trước hoặc dùng HQL DELETE."},
+// === FETCH STRATEGY ===
+{topic:"Code",q:"FetchType mặc định của @ManyToOne là gì?",
+opts:["LAZY","BATCH","SUBSELECT","EAGER"],
+ans:3,explain:"@ManyToOne mặc định EAGER: Hibernate load Category ngay khi load Product (JOIN). Có thể override: @ManyToOne(fetch=FetchType.LAZY) để load khi cần."},
 
-{topic:"Code",q:"Trong TH2 yêu cầu 2, để cập nhật sản phẩm đã có ID bằng Hibernate dùng gì?",
-opts:["session.persist(p)","session.save(p)","session.merge(p)","session.update(p)"],
-ans:2,explain:"session.merge(p): cập nhật entity đã tồn tại (có ID) hoặc attach detached entity. session.persist() chỉ dùng cho entity mới (id=null)."},
+{topic:"Code",q:"FetchType mặc định của @OneToMany là gì và tại sao?",
+opts:["EAGER vì cần load đủ dữ liệu","LAZY vì tránh load toàn bộ collection khi không cần","BATCH để load theo nhóm","SELECT vì là mặc định JPA"],
+ans:1,explain:"@OneToMany mặc định LAZY: tránh load hàng trăm Product khi chỉ cần thông tin Category. Collection chỉ query khi gọi category.getProducts()."},
 
-{topic:"Code",q:"TH2 yêu cầu 3: thêm một hóa đơn mua hàng. Hóa đơn gồm header (Invoice) và chi tiết (InvoiceDetail). Cần gì?",
-opts:["Hai method riêng biệt","Transaction: persist Invoice rồi persist các InvoiceDetail","Batch processing duy nhất","Stored Procedure"],
-ans:1,explain:"Thêm hóa đơn là thao tác phức hợp: persist Invoice (lấy ID), persist từng InvoiceDetail với invoiceId. Toàn bộ trong một transaction."},
+{topic:"Code",q:"Khi nào nên dùng FetchType.EAGER cho @ManyToOne?",
+opts:["Luôn luôn dùng EAGER","Khi luôn cần dữ liệu liên quan ngay lập tức","Khi muốn tiết kiệm bộ nhớ","Khi collection có ít phần tử"],
+ans:1,explain:"EAGER phù hợp khi 99% trường hợp cần dữ liệu liên quan. Ví dụ: Product luôn hiển thị tên Category → @ManyToOne EAGER. Tránh EAGER cho collection lớn."},
 
-{topic:"Code",q:"TH2 yêu cầu 4: thống kê doanh thu theo khoảng thời gian. HQL dùng hàm tổng hợp nào?",
-opts:["COUNT(*)","AVG(price)","SUM(amount)","MAX(total)"],
-ans:2,explain:"Doanh thu = tổng tiền: 'SELECT SUM(i.totalAmount) FROM Invoice i WHERE i.createdDate BETWEEN :from AND :to'."},
+// === OBJECT LIFECYCLE ===
+{topic:"Code",q:"Một object Product vừa tạo bằng new Product() đang ở trạng thái nào?",
+opts:["Persistent","Detached","Transient","Removed"],
+ans:2,explain:"Transient: object không liên kết với Session nào, không có ID DB. Thay đổi không được Hibernate theo dõi. Phải gọi persist() để chuyển sang Persistent."},
 
-{topic:"Code",q:"Trong TH2, để tìm kiếm động (vừa theo tên, vừa theo giá, vừa theo category tùy chọn), dùng gì hiệu quả?",
-opts:["Nhiều HQL query riêng","Criteria API hoặc xây dựng HQL động","Stored Procedure","Native SQL"],
-ans:1,explain:"Criteria API: CriteriaBuilder tạo Predicate cho từng điều kiện, kết hợp builder.and()/or(). Hoặc xây chuỗi HQL động với StringBuilder."},
+{topic:"Code",q:"Sau khi gọi session.persist(product), object product chuyển sang trạng thái nào?",
+opts:["Detached","Transient","Removed","Persistent"],
+ans:3,explain:"Persistent: object được Session quản lý, có ID trong DB (hoặc sẽ có sau commit). Mọi thay đổi trên object được Hibernate tự động sync (dirty checking)."},
 
-{topic:"Code",q:"Trong TH2, khi dùng Criteria API, Root<Product> root = query.from(Product.class) làm gì?",
-opts:["Tạo kết nối DB","Chỉ định entity nguồn của query (FROM Product)","Tạo điều kiện lọc","Định nghĩa cột SELECT"],
-ans:1,explain:"Root<Product> định nghĩa entity gốc (FROM clause) của Criteria query. Từ root có thể navigate sang property: root.get('price'), root.join('category')."},
+{topic:"Code",q:"Sau khi gọi session.close() hoặc session.evict(product), object chuyển sang trạng thái nào?",
+opts:["Transient","Removed","Detached","Persistent"],
+ans:2,explain:"Detached: object không còn liên kết Session nhưng vẫn có ID DB. Thay đổi không được theo dõi. Dùng session.merge(product) để reattach và cập nhật DB."},
 
-{topic:"Code",q:"Trong TH2, để lọc sản phẩm theo category bằng Criteria API, dùng gì?",
-opts:["root.equal('category', cat)","builder.equal(root.get('category'), cat)","root.join('category').get('id')","builder.like(root.get('category'))"],
-ans:1,explain:"builder.equal(root.get('category'), categoryObject): tạo Predicate kiểm tra field category bằng object. Hibernate tự dịch sang WHERE category_id = ?."},
+{topic:"Code",q:"Phân biệt session.persist() và session.merge() trong Hibernate?",
+opts:["persist() nhanh hơn merge()","persist(): INSERT entity mới (id null); merge(): UPDATE hoặc reattach entity đã có ID","merge() chỉ dùng cho detached object","persist() cần transaction, merge() không"],
+ans:1,explain:"persist(): entity mới (transient), INSERT vào DB. merge(): entity đã có ID (detached/persistent), UPDATE; hoặc copy state sang persistent object mới. Trả về managed entity."},
 
-{topic:"Code",q:"Trong TH2, cấu hình Hibernate đặt trong file nào theo cách truyền thống?",
-opts:["application.properties","hibernate.cfg.xml hoặc persistence.xml","spring-config.xml","database.yml"],
-ans:1,explain:"Hibernate standalone: dùng hibernate.cfg.xml (XML config) hoặc persistence.xml (JPA standard). Chứa connection URL, dialect, entity packages."},
+{topic:"Code",q:"Để xóa Product trong Hibernate 6+ (Jakarta), dùng phương thức nào?",
+opts:["session.delete(product)","session.drop(product)","session.remove(product)","session.erase(product)"],
+ans:2,explain:"Hibernate 6+ (Jakarta Persistence): session.remove(entity). Hibernate 5 cũ dùng session.delete(). Entity phải đang ở trạng thái Persistent trước khi remove."},
 
-// ──────────────── CODE (TH3-Spring MVC) ────────────────
-{topic:"Code",q:"TH3 yêu cầu hệ thống bán hàng có 3 nhóm người dùng. Nhóm nào KHÔNG cần đăng nhập để dùng?",
-opts:["Admin","Khách hàng (Customer)","Người dùng khách (Guest)","Tất cả cần đăng nhập"],
-ans:2,explain:"TH3: Guest (người dùng khách) xem sản phẩm, tra cứu, thêm giỏ hàng mà không cần đăng nhập. Chỉ khi thanh toán mới bắt buộc đăng nhập."},
+{topic:"Code",q:"session.get(Product.class, id) và HQL query khác nhau chủ yếu ở điểm nào?",
+opts:["HQL nhanh hơn get()","get(): tìm theo PK có kiểm tra L1 cache; HQL: query linh hoạt hơn, không check cache","get() không cần transaction","HQL chỉ dùng cho aggregate"],
+ans:1,explain:"session.get(): tìm theo PK, kiểm tra L1 cache trước (nếu đã load không query lại), trả null nếu không có. HQL: query phức tạp hơn, luôn xuống DB."},
 
-{topic:"Code",q:"Trong TH3, Product có thuộc tính nào sau đây theo đề bài?",
-opts:["Mã, tên, giá, quốc gia sản xuất, ảnh","Mã, tên, giá, số lượng, category","Mã, tên, mô tả, tác giả, giá","Mã, tên, đơn vị, tồn kho, giá"],
-ans:0,explain:"TH3 nêu rõ: mỗi sản phẩm gồm mã sản phẩm, tên sản phẩm, giá bán, quốc gia sản xuất, ảnh sản phẩm."},
+// === HQL – CƠ BẢN ===
+{topic:"Code",q:"Trong HQL, 'FROM Product' khác SQL 'SELECT * FROM products' như thế nào?",
+opts:["HQL nhanh hơn SQL","HQL dùng tên class Java (Product) thay vì tên bảng (products)","Kết quả HQL là String, SQL là object","HQL không cần session"],
+ans:1,explain:"HQL là object-oriented: tên class (Product), tên property (name, price) không phải tên bảng/cột DB. Hibernate dịch HQL sang SQL theo mapping."},
 
-{topic:"Code",q:"Trong TH3, quan hệ giữa Product và Category như thế nào?",
-opts:["Nhiều product - nhiều category","Một product thuộc một category","Một product thuộc nhiều category","Category không liên quan product"],
-ans:1,explain:"TH3: 'Mỗi sản phẩm có thể thuộc một danh mục' → Product @ManyToOne Category, Category @OneToMany Product."},
+{topic:"Code",q:"HQL lấy danh sách Product, cú pháp đúng là gì?",
+opts:["SELECT * FROM Product","FROM Product p","QUERY Product","GET ALL FROM Product p"],
+ans:1,explain:"'FROM Product p' hoặc 'FROM Product': lấy tất cả object Product. Không cần SELECT * vì Hibernate tự map cả object. Alias p để dùng trong WHERE."},
 
-{topic:"Code",q:"TH3: Admin có quyền gì với sản phẩm?",
-opts:["Chỉ xem sản phẩm","Thêm, xóa, sửa thông tin sản phẩm","Xem báo cáo doanh thu","Quản lý sản phẩm và báo cáo doanh thu"],
-ans:3,explain:"TH3 Admin có 2 chức năng: a) Quản lý sản phẩm (thêm/xóa/sửa), b) Báo cáo doanh thu theo tháng hoặc theo quý."},
+{topic:"Code",q:"Named parameter trong HQL khai báo và truyền giá trị như thế nào?",
+opts:["? và stmt.setString(1, value)","?name và query.set(name, value)","':name' trong HQL và query.setParameter('name', value)","#{name} và query.bind(name, value)"],
+ans:2,explain:"Named param: 'FROM Product p WHERE p.name LIKE :keyword'. Truyền: query.setParameter('keyword', '%áo%'). Rõ ràng hơn positional ?, dùng lại được nhiều lần."},
 
-{topic:"Code",q:"Trong TH3, Guest được phép làm gì với giỏ hàng?",
-opts:["Chỉ xem giỏ hàng","Thêm, cập nhật số lượng, xóa sản phẩm","Thêm và thanh toán","Không có quyền giỏ hàng"],
-ans:1,explain:"TH3: Guest có giỏ hàng đầy đủ - thêm sản phẩm, cập nhật số lượng, xóa sản phẩm khỏi giỏ. Khi thanh toán mới cần đăng nhập."},
+{topic:"Code",q:"Trong TH2, HQL tìm Product theo tên không phân biệt hoa thường viết thế nào?",
+opts:["WHERE p.name = :kw","WHERE p.name LIKE :kw","WHERE LOWER(p.name) LIKE LOWER(:kw)","WHERE p.name CONTAINS :kw"],
+ans:2,explain:"LOWER() cả hai vế: 'FROM Product p WHERE LOWER(p.name) LIKE LOWER(:kw)' với kw = '%' + keyword + '%'. LIKE phân biệt hoa thường mặc định trong nhiều DB."},
 
-{topic:"Code",q:"Giỏ hàng trong TH3 thường được lưu ở đâu phù hợp nhất?",
-opts:["Database (bảng cart)","HttpSession của người dùng","Cookie trình duyệt","LocalStorage phía client"],
-ans:1,explain:"HttpSession: lưu Map<Integer,Integer> (productId→quantity) trong session. Guest chưa login vẫn có session riêng. Khi login session merge vào tài khoản."},
+{topic:"Code",q:"HQL tìm Product có giá từ 100.000 đến 500.000, viết điều kiện như thế nào?",
+opts:["WHERE price > 100000 OR price < 500000","WHERE p.price BETWEEN :minPrice AND :maxPrice","WHERE p.price >= :min OR p.price <= :max","WHERE price IN (:min, :max)"],
+ans:1,explain:"BETWEEN trong HQL: 'FROM Product p WHERE p.price BETWEEN :minPrice AND :maxPrice'. Inclusive cả hai đầu. Tương đương: p.price >= min AND p.price <= max."},
 
-{topic:"Code",q:"Trong TH3, controller xử lý giỏ hàng thêm sản phẩm dùng annotation nào cho method?",
-opts:["@GetMapping('/cart/add')","@PostMapping('/cart/add')","@PutMapping('/cart/add')","@PatchMapping('/cart/add')"],
-ans:1,explain:"Thêm vào giỏ là hành động thay đổi dữ liệu (state change) → dùng POST. GET chỉ dùng để lấy dữ liệu không thay đổi server state."},
+{topic:"Code",q:"HQL tìm Product theo Category object (không phải ID), viết WHERE thế nào?",
+opts:["WHERE p.categoryId = :catId","WHERE p.category = :cat","WHERE p.category.id = :catId","WHERE category_id = :catId"],
+ans:1,explain:"'FROM Product p WHERE p.category = :cat': so sánh object. Hoặc 'WHERE p.category.id = :catId': navigate property. Cả hai đều đúng, HQL tự dịch sang SQL JOIN."},
 
-{topic:"Code",q:"TH3 yêu cầu tra cứu sản phẩm theo quốc gia sản xuất. HQL viết như thế nào?",
-opts:["WHERE p.country = :country","WHERE country IS :country","FROM Product WHERE nation = :c","FIND Product BY country"],
-ans:0,explain:"HQL: 'FROM Product p WHERE p.country = :country' với setParameter('country', value). Property HQL là tên field Java, không phải tên cột DB."},
+{topic:"Code",q:"HQL sắp xếp Product theo giá tăng dần rồi theo tên tăng dần, viết thế nào?",
+opts:["SORT BY p.price ASC, p.name ASC","ORDER BY p.price ASC, p.name ASC","ORDER price ASC, name ASC","ARRANGE BY p.price, p.name"],
+ans:1,explain:"'FROM Product p ORDER BY p.price ASC, p.name ASC': nhiều tiêu chí cách nhau dấu phẩy, mỗi tiêu chí có ASC/DESC riêng. Hibernate dịch sang SQL ORDER BY."},
 
-{topic:"Code",q:"Trong TH3, tìm kiếm sản phẩm theo khoảng giá (minPrice, maxPrice) với HQL dùng gì?",
-opts:["WHERE p.price > :min OR p.price < :max","WHERE p.price BETWEEN :min AND :max","WHERE price IN (:min, :max)","WHERE price RANGE :min TO :max"],
-ans:1,explain:"HQL BETWEEN: 'FROM Product p WHERE p.price BETWEEN :min AND :max'. Inclusive cả hai đầu. Named parameter rõ ràng hơn positional ?."},
+{topic:"Code",q:"HQL UPDATE sản phẩm (tăng giá 10%) viết thế nào và dùng loại query nào?",
+opts:["session.createQuery('UPDATE Product SET price=price*1.1')","session.createMutationQuery('UPDATE Product p SET p.price = p.price * 1.1').executeUpdate()","session.update('Product', 1.1)","HQL không hỗ trợ UPDATE"],
+ans:1,explain:"Hibernate 6+: createMutationQuery() cho DML (UPDATE/DELETE). executeUpdate() trả int (số hàng). Cần transaction. UPDATE trong HQL thao tác trực tiếp DB, không qua object."},
 
-{topic:"Code",q:"TH3: hiển thị danh sách sản phẩm sắp xếp tăng dần theo giá trong Thymeleaf, controller cần làm gì?",
-opts:["Sắp xếp trong Thymeleaf template","Truyền tham số sort cho HQL rồi thêm vào Model","Dùng JavaScript sort","Dùng @Sort annotation"],
-ans:1,explain:"Controller nhận @RequestParam sort ('price_asc'/'price_desc'/...), xây HQL ORDER BY tương ứng, trả List<Product> vào Model. Thymeleaf chỉ render."},
+{topic:"Code",q:"HQL DELETE Product theo ID viết thế nào?",
+opts:["session.createMutationQuery('DELETE Product p WHERE p.id = :id').executeUpdate()","session.createQuery('DELETE FROM products WHERE id = :id')","session.remove('Product', id)","DELETE FROM Product WHERE id = :id (không cần session)"],
+ans:0,explain:"'DELETE Product p WHERE p.id = :id' hoặc 'DELETE FROM Product WHERE id = :id'. Dùng createMutationQuery().executeUpdate(). Không cần load entity trước, hiệu quả hơn remove()."},
 
-{topic:"Code",q:"Trong TH3, Thymeleaf lặp danh sách sản phẩm từ model attribute 'products' dùng gì?",
-opts:["th:loop='p : ${products}'","th:each='p : ${products}'","th:for='p in products'","th:repeat='product in ${products}'"],
-ans:1,explain:"th:each='p : ${products}': lặp qua List từ model. Tương đương for-each. Biến p dùng trong block để hiển thị p.name, p.price, ..."},
+// === HQL – AGGREGATE & THỐNG KÊ ===
+{topic:"Code",q:"Trong TH2, HQL thống kê doanh thu tổng theo khoảng thời gian dùng hàm nào?",
+opts:["COUNT(i.total)","AVG(i.total)","SUM(i.total)","MAX(i.total)"],
+ans:2,explain:"'SELECT SUM(i.totalAmount) FROM Invoice i WHERE i.createdDate BETWEEN :from AND :to': SUM() cộng tổng tất cả hóa đơn trong khoảng ngày. Trả về BigDecimal hoặc Double."},
 
-{topic:"Code",q:"Trong TH3, để hiển thị ảnh sản phẩm với đường dẫn động, Thymeleaf dùng gì?",
-opts:["th:href='${p.image}'","th:src='@{${p.image}}'","img src='${p.image}'","th:img='${p.image}'"],
-ans:1,explain:"th:src='@{${p.image}}': @{} tạo URL context-aware, ${p.image} lấy đường dẫn ảnh từ object. Kết hợp để tạo src đúng."},
+{topic:"Code",q:"HQL thống kê doanh thu theo từng tháng trong năm, GROUP BY dùng gì?",
+opts:["GROUP BY i.createdDate","GROUP BY MONTH(i.createdDate)","GROUP BY YEAR(i.createdDate), MONTH(i.createdDate)","GROUP BY DATE(i.createdDate)"],
+ans:1,explain:"'SELECT MONTH(i.createdDate), SUM(i.total) FROM Invoice i GROUP BY MONTH(i.createdDate)': MONTH() lấy tháng, GROUP BY tháng để cộng doanh thu từng tháng."},
 
-{topic:"Code",q:"TH3: form tìm kiếm sản phẩm gửi keyword lên controller, attribute th nào dùng cho action?",
-opts:["th:action='@{/products/search}'","th:url='/products/search'","th:href='/products/search'","th:submit='/products/search'"],
-ans:0,explain:"th:action='@{/products/search}': binding URL cho form action với context path đúng. th:href dùng cho link <a>, không phải form."},
+{topic:"Code",q:"Kết quả HQL 'SELECT p.category.name, COUNT(p) FROM Product p GROUP BY p.category' trả về kiểu gì?",
+opts:["List<Product>","List<Category>","List<Object[]> (mảng gồm String và Long)","Map<String, Long>"],
+ans:2,explain:"SELECT nhiều field → List<Object[]>. Mỗi phần tử là Object[]{categoryName, count}. Truy cập: obj[0] là String tên category, obj[1] là Long số lượng."},
 
-{topic:"Code",q:"Trong TH3, controller admin quản lý sản phẩm đặt @RequestMapping như thế nào?",
-opts:["@RequestMapping('/products')","@RequestMapping('/admin/products')","@RequestMapping('/api/products')","@RequestMapping('/manage')"],
-ans:1,explain:"Theo TH3 phân quyền: admin truy cập /admin/**. @RequestMapping('/admin/products') + Spring Security hasRole('ADMIN') cho /admin/**."},
+{topic:"Code",q:"Trong HQL, để đếm số Product trong mỗi Category (có JOIN), dùng HQL nào?",
+opts:["SELECT COUNT(*) FROM Product","SELECT c.name, COUNT(p) FROM Category c JOIN c.products p GROUP BY c.name","COUNT products GROUP BY category","SELECT Category, COUNT FROM Product"],
+ans:1,explain:"JOIN trong HQL: 'JOIN c.products p' navigate qua relationship @OneToMany. GROUP BY c.name để đếm theo từng category. Hibernate tự dịch sang SQL JOIN + GROUP BY."},
 
-{topic:"Code",q:"TH3 yêu cầu báo cáo doanh thu theo tháng. HQL dùng hàm nào để lấy tháng từ ngày?",
-opts:["DATE_FORMAT()","MONTH()","TO_CHAR()","EXTRACT(MONTH)"],
-ans:1,explain:"HQL hỗ trợ MONTH(): 'SELECT MONTH(i.createdDate), SUM(i.total) FROM Invoice i GROUP BY MONTH(i.createdDate)'. Hibernate dịch sang hàm DB tương ứng."},
+// === CRITERIA API ===
+{topic:"Code",q:"Bước đầu tiên để dùng Criteria API trong Hibernate là gì?",
+opts:["session.createCriteria(Product.class)","CriteriaBuilder builder = session.getCriteriaBuilder()","new CriteriaQuery<>(Product.class)","session.criteria().from(Product.class)"],
+ans:1,explain:"CriteriaBuilder: factory tạo mọi thứ trong Criteria API. Lấy từ session.getCriteriaBuilder(). Từ builder tạo CriteriaQuery, Predicate, Order..."},
 
-{topic:"Code",q:"TH3: báo cáo doanh thu theo quý, không có hàm QUARTER() trong HQL, xử lý thế nào?",
-opts:["Dùng native SQL thuần","Dùng CASE WHEN MONTH() BETWEEN 1 AND 3 THEN 1... hoặc tính trong Java","Dùng Stored Procedure","Không thể thực hiện"],
-ans:1,explain:"Không có QUARTER() chuẩn trong HQL: dùng CASE WHEN trong HQL, hoặc GROUP BY MONTH rồi tổng hợp theo quý trong Java/Service layer."},
+{topic:"Code",q:"Sau khi có CriteriaBuilder, bước tiếp theo để tạo query lấy danh sách Product là gì?",
+opts:["builder.createList(Product.class)","CriteriaQuery<Product> query = builder.createQuery(Product.class)","builder.select(Product.class)","new CriteriaQuery<Product>()"],
+ans:1,explain:"CriteriaQuery<Product> query = builder.createQuery(Product.class): tạo query object, kiểu generic xác định kiểu kết quả trả về (Product)."},
 
-{topic:"Code",q:"Trong TH3, Spring Security cấu hình cho 3 role. Thứ tự requestMatchers có ảnh hưởng không?",
-opts:["Không ảnh hưởng","Có: rule đầu tiên khớp sẽ được áp dụng","Chỉ rule cuối được áp dụng","Spring tự tối ưu thứ tự"],
-ans:1,explain:"Spring Security duyệt requestMatchers theo thứ tự khai báo, áp dụng rule đầu tiên khớp. Phải đặt rule cụ thể (admin/**) trước anyRequest()."},
+{topic:"Code",q:"Root<Product> root = query.from(Product.class) trong Criteria API làm gì?",
+opts:["Lấy Product đầu tiên","Định nghĩa entity nguồn (FROM Product), dùng để navigate property","Tạo điều kiện lọc","Join Product với Category"],
+ans:1,explain:"Root<Product>: định nghĩa FROM clause, là điểm xuất phát để navigate: root.get('price'), root.get('category'), root.join('category'). Hibernate dịch sang FROM product."},
 
-{topic:"Code",q:"TH3: khi Guest thanh toán giỏ hàng, Spring Security cần cấu hình thế nào?",
-opts:["Cho phép /checkout với permitAll()","Redirect /checkout đến trang login nếu chưa authenticated","Disable security cho /checkout","Dùng CSRF token đặc biệt"],
-ans:1,explain:".requestMatchers('/checkout').authenticated(): Spring Security tự redirect đến loginPage khi chưa login. Sau login redirect về /checkout."},
+{topic:"Code",q:"Tạo điều kiện lọc Product theo category dùng Criteria API thế nào?",
+opts:["root.where('category', cat)","Predicate p = builder.equal(root.get('category'), cat)","query.filter(category, cat)","builder.match(root, 'category', cat)"],
+ans:1,explain:"builder.equal(root.get('category'), cat): tạo Predicate '= cat'. Sau đó query.where(p) áp điều kiện. Hibernate dịch sang WHERE category_id = ?."},
 
-{topic:"Code",q:"TH3 yêu cầu đăng ký người dùng. Form đăng ký POST lên controller, annotation nào nhận dữ liệu form?",
-opts:["@RequestBody User u","@ModelAttribute User u","@RequestParam User u","@FormParam User u"],
-ans:1,explain:"@ModelAttribute User u: Spring MVC bind tất cả field form (name, email, password...) vào object User tự động. Phù hợp cho HTML form submit."},
+{topic:"Code",q:"Tìm Product có tên chứa từ khóa dùng Criteria API, Predicate viết thế nào?",
+opts:["builder.contains(root.get('name'), kw)","builder.like(root.get('name'), '%' + kw + '%')","builder.search(root, 'name', kw)","root.get('name').contains(kw)"],
+ans:1,explain:"builder.like(root.get('name'), '%keyword%'): tạo Predicate LIKE. Hoặc dùng Expression<String> để build pattern động. Không phân biệt hoa thường thì thêm builder.lower()."},
 
-{topic:"Code",q:"Trong TH3, sau khi đăng ký thành công, controller nên redirect thế nào?",
-opts:["return 'register';","return new ResponseEntity<>(user, 200);","return 'redirect:/login';","return 'forward:/home';"],
-ans:2,explain:"'redirect:/login': POST-Redirect-GET pattern tránh form resubmit khi F5. Sau đăng ký redirect sang trang login để user đăng nhập."},
+{topic:"Code",q:"Tìm Product có giá từ minPrice đến maxPrice bằng Criteria API dùng gì?",
+opts:["builder.range(root.get('price'), min, max)","builder.between(root.get('price'), minPrice, maxPrice)","builder.greaterThan() AND builder.lessThan()","root.price().between(min, max)"],
+ans:1,explain:"builder.between(root.get('price'), minPrice, maxPrice): tạo Predicate BETWEEN min AND max. Ngắn gọn hơn kết hợp greaterThanOrEqualTo + lessThanOrEqualTo."},
 
-{topic:"Code",q:"TH3: Customer entity có thuộc tính nào?",
-opts:["Tên, email, password, role","Mã, họ tên, giới tính, năm sinh","Tên, địa chỉ, số điện thoại, email","Mã, tên, avatar, giới tính, ngày sinh"],
-ans:1,explain:"TH3 nêu: Khách hàng gồm mã khách hàng, họ tên, giới tính, năm sinh. Thông tin login (username/password) thường trong bảng User riêng."},
+{topic:"Code",q:"Kết hợp nhiều điều kiện (tên AND khoảng giá AND category) trong Criteria API dùng gì?",
+opts:["query.where(p1, p2, p3)","Predicate all = builder.and(p1, p2, p3); query.where(all)","builder.combine(p1, p2, p3)","query.filter(p1).filter(p2).filter(p3)"],
+ans:1,explain:"builder.and(p1, p2, p3): kết hợp AND nhiều Predicate. builder.or(p1, p2): kết hợp OR. Gán vào query.where(). Criteria API type-safe, phát hiện lỗi lúc compile."},
 
-{topic:"Code",q:"Trong TH3, để lưu thông tin mua hàng khi checkout, cần persist những gì?",
-opts:["Chỉ cập nhật số lượng tồn kho","Tạo Order + các OrderDetail + trừ tồn kho","Chỉ tạo Order header","Chỉ xóa giỏ hàng khỏi session"],
-ans:1,explain:"Checkout: tạo Order (tổng tiền, ngày mua, customerId), tạo OrderDetail cho từng sản phẩm, trừ stockQuantity, xóa session cart. Trong một transaction."},
+{topic:"Code",q:"Thực thi Criteria query và lấy danh sách kết quả, dùng cú pháp nào?",
+opts:["query.execute()","session.createQuery(query).list()","session.createQuery(query).getResultList()","session.run(query).toList()"],
+ans:2,explain:"session.createQuery(query).getResultList(): tạo TypedQuery từ CriteriaQuery, getResultList() thực thi và trả List<Product>. getSingleResult() nếu chắc chắn trả 1 kết quả."},
 
-{topic:"Code",q:"Trong TH3, DispatcherServletInit cần đăng ký những config class nào tối thiểu?",
-opts:["Chỉ WebAppContextConfigs","HibernateConfigs, WebAppContextConfigs, SpringSecurityConfigs","Chỉ SpringSecurityConfigs","Chỉ HibernateConfigs"],
-ans:1,explain:"Cần: WebAppContextConfigs (Spring MVC, Thymeleaf), HibernateConfigs (DB, SessionFactory, TransactionManager), SpringSecurityConfigs (auth, authorization)."},
+{topic:"Code",q:"Criteria API có ưu điểm gì so với HQL string?",
+opts:["Nhanh hơn HQL","Type-safe, phát hiện lỗi lúc compile không phải runtime","Hỗ trợ nhiều DB hơn","Ít code hơn HQL"],
+ans:1,explain:"Type-safe: compiler kiểm tra tên property, kiểu dữ liệu. HQL là String → lỗi typo chỉ phát hiện khi chạy. Criteria tiện cho query động (thêm bớt điều kiện tùy params)."},
 
-{topic:"Code",q:"TH3: tại sao cần @EnableTransactionManagement trong config class?",
-opts:["Bật kết nối DB","Kích hoạt @Transactional annotation qua Spring AOP","Enable Hibernate auto-commit","Tạo transaction pool"],
-ans:1,explain:"@EnableTransactionManagement: Spring AOP proxy các method @Transactional để tự begin/commit/rollback transaction. Thiếu nó @Transactional không hoạt động."},
+// === TRANSACTION TRONG THỰC HÀNH ===
+{topic:"Code",q:"Trong TH2 yêu cầu 3 (thêm hóa đơn), tại sao phải dùng transaction?",
+opts:["Transaction tăng tốc độ insert","Đảm bảo persist Invoice VÀ các InvoiceDetail cùng thành công hoặc cùng rollback","Transaction bắt buộc cho mọi Hibernate query","Transaction chỉ cần cho UPDATE/DELETE"],
+ans:1,explain:"Tính Atomicity: nếu persist Invoice thành công nhưng persist InvoiceDetail thất bại, phải rollback toàn bộ. Không transaction sẽ có Invoice không có detail (dữ liệu không nhất quán)."},
 
-{topic:"Code",q:"Trong TH3, LocalSessionFactoryBean cần cấu hình property nào để tìm entity class?",
-opts:["setEntityPackage()","setPackagesToScan('com.dht.pojo')","setEntityClasses()","setScanPath('pojo')"],
-ans:1,explain:"setPackagesToScan('com.dht.pojo'): Hibernate tự scan toàn bộ class @Entity trong package đó. Không cần liệt kê từng class như persistence.xml."},
+{topic:"Code",q:"Sau khi persist Invoice, làm sao lấy ID vừa sinh để dùng cho InvoiceDetail?",
+opts:["Dùng session.lastInsertId()","invoice.getId() sau commit","invoice.getId() ngay sau session.persist(invoice) – Hibernate sync ID trước commit","Dùng SELECT MAX(id) FROM Invoice"],
+ans:2,explain:"Sau session.persist(invoice), Hibernate thực hiện INSERT ngay và sync generated ID vào object (với IDENTITY strategy). invoice.getId() có giá trị ngay, trước khi commit."},
 
-{topic:"Code",q:"TH3: @PropertySource('classpath:database.properties') trong HibernateConfigs dùng để làm gì?",
-opts:["Import SQL script","Load thông tin kết nối DB vào Spring Environment","Enable Hibernate logging","Tạo schema tự động"],
-ans:1,explain:"@PropertySource load file .properties vào Environment. Sau đó @Value('${db.url}') inject giá trị vào field để cấu hình DataSource."},
+{topic:"Code",q:"Xử lý exception đúng cách trong transaction Hibernate thế nào?",
+opts:["Chỉ cần try-finally mà không rollback","try { begin; ...; commit; } catch(Exception e) { transaction.rollback(); }","Gọi rollback() trước commit()","Exception Hibernate tự rollback"],
+ans:1,explain:"try { tx.begin(); ...; tx.commit(); } catch(Exception e) { if(tx!=null) tx.rollback(); } finally { session.close(); }. Phải rollback trong catch, đóng session trong finally."},
 
-{topic:"Code",q:"Trong TH3, WebAppContextConfigs cần implement interface nào?",
-opts:["ApplicationContextAware","WebMvcConfigurer","ServletContextListener","BeanPostProcessor"],
-ans:1,explain:"WebMvcConfigurer: interface Spring MVC để customize cấu hình như addResourceHandlers() (static files), addFormatters() (custom formatters), configureViewResolvers()."},
+{topic:"Code",q:"Trong Spring, @Transactional trên method service thay thế được điều gì?",
+opts:["Thay thế SessionFactory","Thay thế session.getTransaction().begin/commit/rollback","Thay thế session.close()","Thay thế toàn bộ Hibernate config"],
+ans:1,explain:"@Transactional: Spring AOP tự begin transaction trước method, commit sau khi method return thành công, rollback nếu ném RuntimeException. Không cần code begin/commit thủ công."},
 
-{topic:"Code",q:"TH3: addResourceHandlers() trong WebAppContextConfigs cấu hình gì?",
-opts:["Map controller với URL","Serve file tĩnh (CSS, JS, ảnh) trực tiếp","Cấu hình view resolver","Enable multipart upload"],
-ans:1,explain:"addResourceHandlers('/static/**').addResourceLocations('/resources/'): Spring MVC serve static files không qua controller, thường permit all trong Security config."},
+// === PHÂN TRANG ===
+{topic:"Code",q:"Trong TH2, để lấy trang 2 (10 bản ghi/trang) từ HQL query, dùng gì?",
+opts:["query.limit(10).offset(10)","query.setFirstResult(10).setMaxResults(10)","query.page(2).size(10)","query.skip(10).take(10)"],
+ans:1,explain:"setFirstResult(10): bỏ qua 10 bản ghi đầu (OFFSET). setMaxResults(10): lấy tối đa 10 bản ghi (LIMIT). Trang n: firstResult = (n-1)*pageSize."},
 
-{topic:"Code",q:"Trong TH3, @ControllerAdvice có thể dùng để làm gì hữu ích?",
-opts:["Map URL cho admin","Thêm dữ liệu chung (categories, user info) vào Model cho mọi controller","Enable CORS toàn cục","Cấu hình session timeout"],
-ans:1,explain:"@ControllerAdvice + @ModelAttribute: thêm dữ liệu dùng chung (danh mục sản phẩm cho navigation menu, thông tin user đăng nhập) vào mọi request."},
+{topic:"Code",q:"Để phân trang dynamic (page, size từ request param), cách tính firstResult là gì?",
+opts:["firstResult = page * size","firstResult = (page - 1) * size","firstResult = page + size","firstResult = page / size"],
+ans:1,explain:"Trang 1: firstResult=(1-1)*size=0. Trang 2: firstResult=(2-1)*size=size. Công thức: (page - 1) * pageSize. Nếu page bắt đầu từ 0 thì firstResult = page * size."},
 
-{topic:"Code",q:"TH3: UserDetailsService.loadUserByUsername() phải trả về kiểu gì?",
-opts:["User entity của app","UserDetails (Spring Security interface)","Authentication object","Principal"],
-ans:1,explain:"loadUserByUsername() phải trả UserDetails. Thường dùng constructor: new User(username, encodedPassword, authorities) của Spring Security."},
+// === THỰC HÀNH TH2 TỔNG HỢP ===
+{topic:"Code",q:"TH2 yêu cầu tìm kiếm Product theo nhiều tiêu chí tùy chọn. Cách nào linh hoạt nhất?",
+opts:["Viết 4 HQL query riêng cho từng combo","Dùng Criteria API, thêm Predicate vào List tùy param có giá trị","Dùng Stored Procedure","Dùng native SQL động"],
+ans:1,explain:"Criteria API: List<Predicate> predicates = new ArrayList(); if(name!=null) predicates.add(builder.like(...)); ... query.where(builder.and(predicates.toArray(...))). Tránh viết nhiều HQL."},
 
-{topic:"Code",q:"Trong TH3, BCryptPasswordEncoder.encode() dùng khi nào?",
-opts:["Khi login để verify","Khi đăng ký, hash password trước khi lưu DB","Khi generate JWT token","Khi tạo session cookie"],
-ans:1,explain:"encode(): hash password lúc register, lưu hash vào DB. Khi login dùng matches(rawPassword, encodedPassword) để verify, không decode BCrypt."},
+{topic:"Code",q:"Trong TH2, sau khi gọi session.persist(product) trong transaction, khi nào SQL INSERT thực sự chạy?",
+opts:["Ngay khi gọi persist()","Khi gọi session.flush() hoặc trước commit()","Chỉ khi gọi session.close()","Sau khi Session bị garbage collected"],
+ans:1,explain:"Hibernate batch writes: persist() đưa vào queue, SQL thực thi khi flush() (tự động trước commit hoặc query). Với IDENTITY generation, INSERT chạy ngay để lấy ID."},
 
-{topic:"Code",q:"Trong TH3, sec:authorize='hasRole(\"ADMIN\")' trong Thymeleaf dùng để làm gì?",
-opts:["Set role cho user","Chỉ render block nếu user có role ADMIN","Redirect admin về trang chủ","Validate role từ form"],
-ans:1,explain:"sec:authorize='hasRole(\"ADMIN\")': Thymeleaf chỉ render block HTML nếu user đăng nhập có ROLE_ADMIN. Ẩn menu admin khỏi Guest/Customer."},
+{topic:"Code",q:"Để cập nhật thông tin Product đã load từ DB trong cùng Session, cần gọi gì?",
+opts:["session.merge(product) bắt buộc","Chỉ cần thay đổi property, Hibernate tự dirty-check khi commit","session.save(product)","session.update(product) bắt buộc"],
+ans:1,explain:"Dirty checking: object Persistent (trong Session) thay đổi property, Hibernate tự phát hiện và sinh UPDATE trước commit. Không cần gọi merge()/update() nếu object đang managed."},
 
-{topic:"Code",q:"TH3: Spring Security formLogin().loginPage('/login') và loginProcessingUrl('/login') khác nhau thế nào?",
-opts:["Cùng một chức năng","loginPage: GET hiển thị form; loginProcessingUrl: POST nhận submit form","loginPage POST, loginProcessingUrl GET","Cả hai đều redirect"],
-ans:1,explain:"loginPage('/login'): GET /login → trả HTML form. loginProcessingUrl('/login'): POST /login → Spring Security xử lý authenticate. Cùng URL khác method."},
+{topic:"Code",q:"Trong TH2, xóa tất cả Product thuộc một Category bằng HQL hiệu quả nhất là gì?",
+opts:["Load từng Product rồi session.remove()","session.createMutationQuery('DELETE Product p WHERE p.category = :cat').executeUpdate()","session.delete(category.getProducts())","Xóa Category sẽ cascade xóa Product"],
+ans:1,explain:"HQL DELETE: một lệnh SQL xóa nhiều bản ghi. Hiệu quả hơn load từng entity rồi remove() (N+1 queries). Cần @Transactional vì là DML operation."},
 
-{topic:"Code",q:"Trong TH3, @SessionAttributes trên controller dùng để làm gì?",
-opts:["Xóa session sau request","Lưu model attribute vào HTTP session giữa các request","Set session timeout","Validate session token"],
-ans:1,explain:"@SessionAttributes('cart'): model attribute 'cart' được lưu vào session. Dùng để persist giỏ hàng giữa nhiều request mà không cần HttpSession trực tiếp."},
+// ──────────────── ĐỀ THI ────────────────
 
-{topic:"Code",q:"Trong TH3, để cập nhật số lượng trong giỏ hàng (Map trong session), sau khi sửa Map cần làm gì?",
-opts:["Gọi session.save()","Session tự cập nhật vì Map là reference","Gọi session.setAttribute() lại","Redirect về /cart"],
-ans:1,explain:"HttpSession lưu reference đến Map. Khi sửa map.put(id, qty), session tự có giá trị mới vì cùng reference. Không cần setAttribute lại nếu đã add lần đầu."},
+// === SPRING FRAMEWORK ===
+{topic:"Đề Thi",q:"IoC (Inversion of Control) trong Spring dùng để làm gì?",
+opts:["Container tự tạo và inject dependency","Mã hóa dữ liệu khi truyền mạng","Ghi log tự động cho method","Quản lý vòng đời HTTP session"],
+ans:0,explain:"IoC: developer không tự new() object, Spring Container chịu trách nhiệm tạo, cấu hình và inject. Principle: Don't call us, we'll call you."},
+
+{topic:"Đề Thi",q:"AOP (Aspect Oriented Programming) trong Spring dùng để làm gì?",
+opts:["Kết nối đến nhiều DB cùng lúc","Tách cross-cutting concern ra khỏi business logic","Tạo giao diện người dùng web","Quản lý luồng HTTP request"],
+ans:1,explain:"AOP: các logic phụ (logging, transaction, security) được tách thành Aspect riêng, tự động áp lên method mà không sửa code business. Dùng Proxy pattern."},
+
+{topic:"Đề Thi",q:"Thẻ <property name='x' ref='y'/> trong Spring XML dùng để làm gì?",
+opts:["Khai báo tên cho bean","Tạo bảng mới trong DB","Inject bean y vào field x qua setter","Định nghĩa scope của bean"],
+ans:2,explain:"<property>: Spring gọi setter setX(y) để inject bean y vào field x. Đây là Setter Injection qua XML config."},
+
+{topic:"Đề Thi",q:"@Qualifier('myBean') đi kèm @Autowired dùng để làm gì?",
+opts:["Tạo bean mới tên myBean","Đánh dấu bean là primary","Bỏ qua autowiring cho field đó","Chỉ định đúng bean khi có nhiều cùng type"],
+ans:3,explain:"Khi có 2 bean cùng interface, @Autowired không biết inject cái nào. @Qualifier('myBean') chỉ định chính xác tên bean muốn inject."},
+
+{topic:"Đề Thi",q:"@Autowired trong Spring mặc định inject theo cơ chế nào?",
+opts:["byType – tìm bean trùng kiểu dữ liệu","byName – tìm bean trùng tên field","constructor – ưu tiên constructor","autodetect – thử nhiều cách"],
+ans:0,explain:"@Autowired mặc định byType: tìm bean trong context có kiểu khớp với field. Nếu có nhiều bean cùng type thì cần @Qualifier để phân biệt."},
+
+{topic:"Đề Thi",q:"Bean scope 'singleton' trong Spring có nghĩa là gì?",
+opts:["Bean tạo mới mỗi lần request","Chỉ một instance trong toàn ApplicationContext","Bean sống trong một HTTP session","Bean không thể inject vào nơi khác"],
+ans:1,explain:"singleton (mặc định): Spring tạo 1 instance duy nhất, dùng chung cho mọi chỗ inject. Đảm bảo stateless service bean."},
+
+{topic:"Đề Thi",q:"Bean scope 'prototype' trong Spring có nghĩa là gì?",
+opts:["Chỉ một instance toàn app","Bean không hỗ trợ @Autowired","Tạo instance mới mỗi lần inject hoặc getBean","Bean chỉ tồn tại trong web context"],
+ans:2,explain:"prototype: mỗi lần request bean (getBean() hoặc @Autowired) Spring tạo object mới. Dùng khi bean cần state riêng cho mỗi nơi sử dụng."},
+
+{topic:"Đề Thi",q:"@Component, @Service, @Repository, @Controller thực chất khác nhau thế nào?",
+opts:["Chức năng runtime hoàn toàn khác nhau","Chỉ @Service và @Repository là bean","@Controller không được Spring quản lý","Đều là stereotype của @Component, khác ngữ nghĩa layer"],
+ans:3,explain:"Đều đánh dấu bean. @Repository thêm exception translation. Phân biệt layer (service/dao/web) giúp code rõ ràng và AOP áp dụng đúng chỗ."},
+
+// === HIBERNATE ===
+{topic:"Đề Thi",q:"HibernateTransactionManager trong Spring dùng để làm gì?",
+opts:["Tích hợp @Transactional với Hibernate Session","Tạo và quản lý SessionFactory","Cấu hình connection pool cho DB","Monitor hiệu năng truy vấn SQL"],
+ans:0,explain:"HibernateTransactionManager: bridge giữa Spring @Transactional và Hibernate Session. Tự bind Session vào transaction, commit/rollback khi method kết thúc."},
+
+{topic:"Đề Thi",q:"connection.setAutoCommit(false) trong JDBC dùng để làm gì?",
+opts:["Tắt kết nối DB tạm thời","Cho phép tự kiểm soát commit/rollback thủ công","Tự động rollback sau mỗi lệnh","Disable SSL cho connection"],
+ans:1,explain:"setAutoCommit(false): mỗi lệnh SQL không tự commit ngay. Developer gọi commit() hoặc rollback() thủ công. Cần thiết khi nhiều lệnh phải là một transaction."},
+
+{topic:"Đề Thi",q:"setMaxResults(n) trong Hibernate query dùng để làm gì?",
+opts:["Set timeout cho query n giây","Giới hạn số cột trả về trong query","Giới hạn số hàng kết quả (tương đương LIMIT n)","Giới hạn kích thước mỗi row trả về"],
+ans:2,explain:"setMaxResults(n): Hibernate thêm LIMIT n vào SQL. Kết hợp setFirstResult() để phân trang: trang 2 = setFirstResult(10).setMaxResults(10)."},
+
+{topic:"Đề Thi",q:"session.flush() trong Hibernate làm gì?",
+opts:["Đóng session và commit transaction","Rollback toàn bộ thay đổi hiện tại","Xóa toàn bộ L1 cache của session","Đồng bộ pending SQL từ bộ nhớ xuống DB"],
+ans:3,explain:"flush(): Hibernate thực thi các SQL đang pending (INSERT/UPDATE/DELETE) để sync với DB. Không commit transaction. Tự động gọi trước commit() và một số query."},
+
+{topic:"Đề Thi",q:"session.evict(entity) trong Hibernate dùng để làm gì?",
+opts:["Tách entity ra khỏi Session thành Detached","Xóa entity khỏi DB ngay lập tức","Reload entity từ DB lên bộ nhớ","Xóa entity khỏi L2 cache"],
+ans:0,explain:"evict(): entity chuyển từ Persistent → Detached. Session không theo dõi dirty changes nữa. Dùng khi cần giải phóng bộ nhớ hoặc entity độc lập với session."},
+
+{topic:"Đề Thi",q:"Dirty checking trong Hibernate là gì?",
+opts:["Validate dữ liệu trước khi lưu vào DB","Tự phát hiện object thay đổi và sinh UPDATE khi flush","Kiểm tra phiên bản để tránh conflict","Đánh dấu field bị lỗi validation"],
+ans:1,explain:"Dirty checking: Hibernate so sánh trạng thái hiện tại của Persistent object với snapshot lúc load. Nếu khác → sinh UPDATE. Không cần gọi merge()/update() thủ công."},
+
+{topic:"Đề Thi",q:"L1 Cache trong Hibernate có phạm vi là gì?",
+opts:["Toàn server, dùng chung mọi session","Toàn application, tồn tại sau khi đóng session","Cấp Session: mất khi session đóng hoặc evict","Cấp query, xóa sau mỗi câu lệnh"],
+ans:2,explain:"L1 Cache (First Level Cache): tự động, phạm vi Session. session.get(Product, 1) lần 2 không query DB, lấy từ cache. session.close() hoặc evict() xóa cache này."},
+
+// === REST API ===
+{topic:"Đề Thi",q:"@RequestBody trong Spring MVC dùng để làm gì?",
+opts:["Lấy query param từ URL","Đọc file upload từ multipart","Trả JSON về cho client","Map JSON body thành Java object tự động"],
+ans:3,explain:"@RequestBody: Jackson deserialize JSON body của request thành Java object. Dùng cho POST/PUT với payload JSON. Ngược lại @ResponseBody serialize Java → JSON."},
+
+{topic:"Đề Thi",q:"@ResponseBody trong Spring MVC dùng để làm gì?",
+opts:["Serialize return value thành JSON, không render view","Nhận JSON từ request body","Đặt HTTP status code cho response","Map URL pattern cho controller method"],
+ans:0,explain:"@ResponseBody: Spring dùng HttpMessageConverter (Jackson) để chuyển return value thành JSON/XML, ghi vào response body thay vì resolve view name."},
+
+{topic:"Đề Thi",q:"@RestController tương đương tổ hợp annotation nào?",
+opts:["@Service + @ResponseBody","@Controller + @ResponseBody","@Component + @RequestMapping","@Controller + @RequestMapping"],
+ans:1,explain:"@RestController = @Controller + @ResponseBody. Mọi method trong class tự động có @ResponseBody, luôn trả JSON/XML, không resolve view name."},
+
+{topic:"Đề Thi",q:"ResponseEntity<T> trong Spring REST dùng để làm gì?",
+opts:["Entity class dùng với JPA/Hibernate","Map request body sang Java object","Wrapper chứa body, HTTP status và headers","Validate dữ liệu trước khi trả về"],
+ans:2,explain:"ResponseEntity cho phép kiểm soát đầy đủ HTTP response: body (data), status (200/201/404...), headers. Ví dụ: return new ResponseEntity<>(data, HttpStatus.CREATED)."},
+
+{topic:"Đề Thi",q:"@CrossOrigin trên controller REST dùng để làm gì?",
+opts:["Mã hóa dữ liệu trên response","Redirect request sang HTTPS","Disable xác thực cho endpoint","Cho phép request từ domain khác (giải quyết CORS)"],
+ans:3,explain:"CORS Policy: browser chặn request từ origin khác. @CrossOrigin thêm Access-Control-Allow-Origin header. Cần khi ReactJS (port 3000) gọi Spring (port 8080)."},
+
+// === SPRING SECURITY ===
+{topic:"Đề Thi",q:"authorizeHttpRequests() trong SecurityFilterChain dùng để làm gì?",
+opts:["Định nghĩa quy tắc phân quyền theo URL","Tạo HTTP client để gửi request","Cấu hình SSL/HTTPS cho server","Tạo custom filter cho request"],
+ans:0,explain:"authorizeHttpRequests(): khai báo ai được truy cập URL nào. Ví dụ: .requestMatchers('/admin/**').hasRole('ADMIN') hoặc .requestMatchers('/public/**').permitAll()."},
+
+{topic:"Đề Thi",q:"permitAll() trong Spring Security có nghĩa là gì?",
+opts:["Chỉ cho phép admin truy cập","Tất cả mọi người đều được phép truy cập","Chỉ user đã đăng nhập được vào","Chặn toàn bộ request đến URL"],
+ans:1,explain:"permitAll(): không cần xác thực, không cần role. Dùng cho trang public: /login, /register, /home, static files (CSS/JS/images)."},
+
+{topic:"Đề Thi",q:"authenticated() trong Spring Security có nghĩa là gì?",
+opts:["Chỉ role ADMIN mới được vào","Chỉ user có JWT token hợp lệ","Bất kỳ user đã đăng nhập, không kể role","Guest và user đều được phép"],
+ans:2,explain:"authenticated(): yêu cầu user phải đăng nhập, không quan tâm role cụ thể. Khác hasRole('X') là phải có đúng role X."},
+
+{topic:"Đề Thi",q:"hasRole('ADMIN') và hasAuthority('ROLE_ADMIN') khác nhau thế nào?",
+opts:["Hoàn toàn giống nhau, không khác biệt","hasRole() chỉ dùng được trong XML config","hasAuthority() yêu cầu BCrypt mã hóa","hasRole() tự thêm prefix ROLE_; hasAuthority() khớp chính xác"],
+ans:3,explain:"hasRole('ADMIN'): Spring tự thêm 'ROLE_' → tìm 'ROLE_ADMIN'. hasAuthority('ROLE_ADMIN'): khớp chính xác với GrantedAuthority. Phải nhất quán với loadUserByUsername()."},
+
+{topic:"Đề Thi",q:"defaultSuccessUrl('/dashboard', true) – tham số true có nghĩa gì?",
+opts:["Luôn redirect /dashboard bất kể URL gốc","Bật remember-me sau khi login","Kích hoạt HTTPS sau khi đăng nhập","Redirect chỉ khi login lần đầu tiên"],
+ans:0,explain:"alwaysUse=true: bất kể user định vào URL nào, sau login luôn redirect /dashboard. false: redirect về URL gốc trước khi bị chặn."},
+
+{topic:"Đề Thi",q:"loadUserByUsername(String username) thuộc interface nào?",
+opts:["AuthenticationProvider, trả Authentication","UserDetailsService, trả UserDetails","SecurityContext, trả về Principal","UserRepository, trả về User entity"],
+ans:1,explain:"UserDetailsService.loadUserByUsername(): Spring Security gọi khi authenticate. Phải trả UserDetails. Nếu không tìm thấy user → ném UsernameNotFoundException."},
+
+{topic:"Đề Thi",q:"SecurityContextHolder trong Spring Security lưu gì?",
+opts:["Cấu hình security của toàn app","Session ID của user hiện tại","Authentication của user đang login trong thread","JWT token dưới dạng Base64"],
+ans:2,explain:"SecurityContextHolder: lưu SecurityContext chứa Authentication object (username, roles, credentials). Dùng getContext().getAuthentication() để lấy user đang login."},
+
+// === SPRING MVC ===
+{topic:"Đề Thi",q:"@EnableWebMvc trên config class dùng để làm gì?",
+opts:["Tự động cấu hình Spring Boot","Kết nối Hibernate với Spring MVC","Bật SSL và HTTPS tự động","Kích hoạt Spring MVC: HandlerMapping, MessageConverter, ViewResolver"],
+ans:3,explain:"@EnableWebMvc: import DelegatingWebMvcConfiguration, đăng ký đầy đủ hạ tầng Spring MVC. Thay thế mvc:annotation-driven trong XML config."},
+
+{topic:"Đề Thi",q:"addResourceHandlers() trong WebMvcConfigurer dùng để làm gì?",
+opts:["Map URL đến thư mục chứa file tĩnh","Thêm handler xử lý REST request","Đăng ký custom formatter cho form","Cấu hình interceptor cho mọi request"],
+ans:0,explain:"addResourceHandlers(): addResourceHandler('/static/**').addResourceLocations('/resources/'). Spring MVC serve file tĩnh trực tiếp không qua controller."},
+
+{topic:"Đề Thi",q:"DispatcherServlet trong Spring MVC đóng vai trò gì?",
+opts:["Kết nối trực tiếp đến DB","Front Controller: nhận và điều phối toàn bộ request","Render Thymeleaf template thành HTML","Quản lý vòng đời của bean"],
+ans:1,explain:"DispatcherServlet là Front Controller: nhận request, dùng HandlerMapping tìm controller, gọi method, nhận ModelAndView, dùng ViewResolver trả response."},
+
+{topic:"Đề Thi",q:"@ModelAttribute trên parameter của controller method dùng để làm gì?",
+opts:["Thêm data vào JSON response","Lưu object vào HTTP session","Bind tất cả form fields vào Java object","Validate dữ liệu form trước khi xử lý"],
+ans:2,explain:"@ModelAttribute User user: Spring MVC tự bind mọi field form (name, email...) vào object User dựa theo tên. Tương đương đọc từng @RequestParam rồi set vào object."},
+
+{topic:"Đề Thi",q:"@RequestParam và @PathVariable khác nhau thế nào?",
+opts:["Không có sự khác biệt nào","@PathVariable chỉ dùng được với GET","@RequestParam chỉ dùng được với POST","@RequestParam từ query string; @PathVariable từ URL path"],
+ans:3,explain:"@RequestParam: /products?page=2 → @RequestParam int page. @PathVariable: /products/5 → @GetMapping('/products/{id}') + @PathVariable int id."},
+
+// === THYMELEAF ===
+{topic:"Đề Thi",q:"th:src='@{${product.image}}' trong Thymeleaf dùng để làm gì?",
+opts:["Tạo URL đúng context path cho src của img","Set CSS class cho thẻ img","Validate đường dẫn ảnh tồn tại không","Lazy load ảnh khi scroll đến"],
+ans:0,explain:"@{}: URL expression tự thêm context path. ${product.image}: lấy đường dẫn từ object. Kết hợp tạo src đúng: /AppName/images/abc.jpg thay vì /images/abc.jpg."},
+
+{topic:"Đề Thi",q:"th:text='${item.name}' khi dùng trong th:each làm gì?",
+opts:["Tạo link đến trang chi tiết item","Hiển thị item.name thay thế nội dung text","Set thuộc tính name của thẻ input","Validate tên item không được rỗng"],
+ans:1,explain:"th:text='${item.name}': trong vòng lặp th:each, mỗi iteration hiển thị name của item hiện tại. Thay thế nội dung text của tag (escape HTML mặc định)."},
+
+{topic:"Đề Thi",q:"th:href='@{/products/{id}(id=${p.id})}' trong Thymeleaf nghĩa là gì?",
+opts:["Tạo form submit đến URL động","Redirect sang trang products","Tạo link động có path variable từ p.id","Import file JavaScript từ path đó"],
+ans:2,explain:"@{/products/{id}(id=${p.id})}: URL expression với path variable. p.id=5 → href='/AppName/products/5'. Cú pháp (varName=${value}) điền giá trị vào {varName}."},
+
+{topic:"Đề Thi",q:"th:object='${user}' và th:field='*{name}' trong form Thymeleaf làm gì?",
+opts:["Validate form trước khi submit","Lưu user object vào session","Hiển thị thông tin user đang login","Bind form với object, field tự set id/name/value"],
+ans:3,explain:"th:object: bind form với object. th:field='*{name}': *{} selection expression, tự sinh id='name' name='name' value='${user.name}'. Xử lý form binding hoàn chỉnh."},
+
+{topic:"Đề Thi",q:"th:if và th:unless trong Thymeleaf hoạt động thế nào?",
+opts:["th:if hiển thị khi true; th:unless khi false","th:if hiển thị khi false; th:unless khi true","Cả hai cần dùng cùng lúc mới hoạt động","Cả hai đều redirect khi điều kiện sai"],
+ans:0,explain:"th:if='${isAdmin}': render element khi isAdmin=true. th:unless='${isAdmin}': render khi isAdmin=false (ngược lại th:if). Thay cho if/else block."},
+
+// === REACTJS ===
+{topic:"Đề Thi",q:"useEffect(() => { alert('Thanh'); }, []) chạy khi nào?",
+opts:["Mỗi lần component re-render","Chỉ 1 lần sau khi component mount","Mỗi lần state thay đổi bất kỳ","Chỉ khi component unmount"],
+ans:1,explain:"Dependency array rỗng []: effect chỉ chạy sau lần render đầu tiên (componentDidMount). alert('Thanh') xuất hiện đúng 1 lần khi component được mount."},
+
+{topic:"Đề Thi",q:"useEffect(() => { fetchData(); }, [id]) chạy khi nào?",
+opts:["Chỉ 1 lần khi mount ban đầu","Chỉ khi id bằng null hoặc undefined","Mỗi khi id thay đổi và lần đầu mount","Mỗi lần bất kỳ state nào thay đổi"],
+ans:2,explain:"Dependency [id]: effect chạy lần đầu và mỗi khi id thay đổi. Dùng để fetch data mới khi id param thay đổi (ví dụ: /products/1 → /products/2)."},
+
+{topic:"Đề Thi",q:"useState trong React dùng để làm gì?",
+opts:["Lưu ref đến DOM element","Chia sẻ data giữa nhiều component","Tạo side effect khi render","Khai báo state, thay đổi state trigger re-render"],
+ans:3,explain:"const [count, setCount] = useState(0): count là giá trị state hiện tại, setCount là hàm cập nhật. Gọi setCount(newValue) → React re-render component."},
+
+{topic:"Đề Thi",q:"useRef trong React có 2 công dụng chính là gì?",
+opts:["Truy cập DOM và giữ giá trị không trigger re-render","Quản lý global state toàn app","Memoize giá trị tính toán nặng","Tạo side effect và hàm cleanup"],
+ans:0,explain:"useRef: (1) ref={inputRef} → inputRef.current là DOM node. (2) Lưu giá trị giữa renders (timer ID, previous value). Thay đổi .current KHÔNG trigger re-render."},
+
+{topic:"Đề Thi",q:"useContext(MyContext) trong React dùng để làm gì?",
+opts:["Subscribe vào Redux store","Đọc giá trị từ Context Provider không cần truyền props","Lưu context vào localStorage","Tạo Context Provider mới"],
+ans:1,explain:"useContext: tránh props drilling. Provider bọc component tree với value, Consumer (useContext) đọc value trực tiếp. Dùng cho theme, language, user đang login."},
+
+{topic:"Đề Thi",q:"useMemo(() => expensiveCalc(n), [n]) dùng để làm gì?",
+opts:["Tạo side effect khi n thay đổi","Memoize function để truyền xuống child","Cache kết quả tính toán nặng, tính lại khi n đổi","Đặt tên cho anonymous function"],
+ans:2,explain:"useMemo: lưu kết quả của hàm. Nếu n không đổi, trả cached value không tính lại. Dùng cho sort/filter/transform dữ liệu lớn tránh tính mỗi render."},
+
+{topic:"Đề Thi",q:"useCallback(() => addItem(), [items]) dùng để làm gì?",
+opts:["Gọi addItem() ngay lập tức","Cache kết quả trả về của addItem","Tạo side effect khi items thay đổi","Memoize function, tạo mới chỉ khi items đổi"],
+ans:3,explain:"useCallback: trả cùng function reference nếu dependency không đổi. Kết hợp React.memo: child nhận cùng function prop → không re-render."},
+
+{topic:"Đề Thi",q:"useNavigate() trong React Router v6 dùng để làm gì?",
+opts:["Điều hướng lập trình đến route khác","Lấy toàn bộ URL hiện tại","Lấy path parameters từ URL","Tạo thẻ link điều hướng"],
+ans:0,explain:"const navigate = useNavigate(). navigate('/home'): đến /home. navigate(-1): back. Dùng trong event handler (sau login, submit form), không phải trong JSX."},
+
+{topic:"Đề Thi",q:"useParams() trong React Router dùng để làm gì?",
+opts:["Lấy query string ?key=value từ URL","Lấy path params như :id từ URL","Lấy location state được truyền qua navigate","Lấy toàn bộ URL đầy đủ hiện tại"],
+ans:1,explain:"const { id } = useParams(): lấy :id từ URL /products/5 → id='5' (luôn là string). Route: <Route path='/products/:id' element={<Detail/>}/>."},
+
+{topic:"Đề Thi",q:"<Outlet/> trong React Router v6 dùng để làm gì?",
+opts:["Tạo link ra ngoài ứng dụng","Export component sang file khác","Placeholder render nested route trong layout cha","Tạo portal ngoài DOM tree chính"],
+ans:2,explain:"Outlet: trong layout cha, <Outlet/> là nơi render child route. AdminLayout có <Outlet/>, nested route /admin/users → render UsersPage vào vị trí đó."},
+
+{topic:"Đề Thi",q:"React.memo(Component) dùng để làm gì?",
+opts:["Import component từ file khác","Tạo memoized state cho component","Export component dưới dạng named export","Ngăn re-render khi props không thay đổi (shallow compare)"],
+ans:3,explain:"React.memo: Higher Order Component, so sánh props cũ vs mới bằng Object.is (shallow). Props không đổi → bỏ qua re-render. Kết hợp useCallback tránh re-render do function prop."},
 
 ];
 
